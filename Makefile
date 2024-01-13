@@ -1,34 +1,19 @@
-
 SOURCES = sources
 
-CONFIG_SUB_REV = 3d5db9ebe860
-BINUTILS_VER = 2.33.1
-GCC_VER = 9.4.0
-MUSL_VER = 1.2.3
-GMP_VER = 6.1.2
-MPC_VER = 1.1.0
-MPFR_VER = 4.0.2
-LINUX_VER = headers-4.19.88-1
+CONFIG_SUB_REV = 28ea239c53a2
+GCC_VER = 11.4.0
+MUSL_VER = 1.2.4
+BINUTILS_VER = 2.41
+GMP_VER = 6.3.0
+MPC_VER = 1.3.1
+MPFR_VER = 4.2.1
+ISL_VER = 
+LINUX_VER = 
+MINGW_VER = v11.0.1
+CHINA = 
 
-GNU_SITE = https://ftp.gnu.org/gnu
-GCC_SITE = $(GNU_SITE)/gcc
-BINUTILS_SITE = $(GNU_SITE)/binutils
-GMP_SITE = $(GNU_SITE)/gmp
-MPC_SITE = $(GNU_SITE)/mpc
-MPFR_SITE = $(GNU_SITE)/mpfr
-
-# ISL_SITE = https://libisl.sourceforge.io
-ISL_SITE = https://downloads.sourceforge.net/project/libisl/
-GCC_SNAP = https://sourceware.org/pub/gcc/snapshots
-
-MUSL_SITE = https://musl.libc.org/releases
-# MUSL_REPO = https://git.musl-libc.org/git/musl
-MUSL_REPO = git://git.musl-libc.org/musl
-
-LINUX_SITE = https://cdn.kernel.org/pub/linux/kernel
-LINUX_HEADERS_SITE = https://ftp.barfooze.de/pub/sabotage/tarballs/
-
-DL_CMD = curl -sLo
+# curl --progress-bar -Lo <file> <url>
+DL_CMD = curl --progress-bar -Lo
 SHA1_CMD = sha1sum -c
 
 COWPATCH = $(CURDIR)/cowpatch.sh
@@ -41,26 +26,66 @@ REL_TOP = ../../..
 
 -include config.mak
 
-SRC_DIRS = gcc-$(GCC_VER) binutils-$(BINUTILS_VER) musl-$(MUSL_VER) \
+ifneq ($(CHINA),)
+GNU_SITE = https://mirrors.ustc.edu.cn/gnu
+
+SOURCEFORGE_MIRROT = https://jaist.dl.sourceforge.net
+
+GCC_SNAP = https://mirrors.tuna.tsinghua.edu.cn/sourceware/gcc/snapshots
+
+LINUX_SITE = https://mirrors.ustc.edu.cn/kernel.org/linux/kernel
+else
+GNU_SITE = https://ftp.gnu.org/gnu
+
+SOURCEFORGE_MIRROT = https://downloads.sourceforge.net
+
+GCC_SNAP = https://sourceware.org/pub/gcc/snapshots
+
+LINUX_SITE = https://cdn.kernel.org/pub/linux/kernel
+endif
+
+MUSL_SITE = https://musl.libc.org/releases
+MUSL_REPO = https://git.musl-libc.org/git/musl
+GCC_SITE = $(GNU_SITE)/gcc
+BINUTILS_SITE = $(GNU_SITE)/binutils
+GMP_SITE = $(GNU_SITE)/gmp
+MPC_SITE = $(GNU_SITE)/mpc
+MPFR_SITE = $(GNU_SITE)/mpfr
+ISL_SITE = $(SOURCEFORGE_MIRROT)/project/libisl
+MINGW_SITE = $(SOURCEFORGE_MIRROT)/project/mingw-w64/mingw-w64/mingw-w64-release
+LINUX_HEADERS_SITE = https://ftp.barfooze.de/pub/sabotage/tarballs
+
+ifneq ($(findstring musl,$(TARGET)),)
+MINGW_VER = 
+else
+MUSL_VER = 
+LINUX_VER = 
+endif
+
+SRC_DIRS = gcc-$(GCC_VER) binutils-$(BINUTILS_VER) \
+    $(if $(MUSL_VER),musl-$(MUSL_VER)) \
 	$(if $(GMP_VER),gmp-$(GMP_VER)) \
 	$(if $(MPC_VER),mpc-$(MPC_VER)) \
 	$(if $(MPFR_VER),mpfr-$(MPFR_VER)) \
 	$(if $(ISL_VER),isl-$(ISL_VER)) \
-	$(if $(LINUX_VER),linux-$(LINUX_VER))
+	$(if $(LINUX_VER),linux-$(LINUX_VER)) \
+    $(if $(MINGW_VER),mingw-w64-$(MINGW_VER))
 
 all:
 
 clean:
-	rm -rf gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-*
+	rm -rf gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-*
 
 distclean: clean
-	rm -rf sources
+	rm -rf sources dist
 
 check:
 	@echo "check bzip2"
 	@which bzip2
 	@echo "check gcc"
 	@which gcc
+	@echo "check g++"
+	@which g++
 	@echo "check libtool"
 	@which libtool
 
@@ -83,6 +108,7 @@ $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-4*)): SITE = $(LIN
 $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-3*)): SITE = $(LINUX_SITE)/v3.x
 $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-2.6*)): SITE = $(LINUX_SITE)/v2.6
 $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-headers-*)): SITE = $(LINUX_HEADERS_SITE)
+$(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/mingw-w64*)): SITE = $(MINGW_SITE)
 
 $(SOURCES):
 	mkdir -p $@
@@ -119,7 +145,7 @@ musl-git-%:
 	case "$@" in */*) exit 1 ;; esac
 	rm -rf $@.tmp
 	mkdir $@.tmp
-	( cd $@.tmp && tar -zxvf - ) < $<
+	( cd $@.tmp && tar -zxvf - > /dev/null ) < $<
 	rm -rf $@
 	touch $@.tmp/$(patsubst %.orig,%,$@)
 	mv $@.tmp/$(patsubst %.orig,%,$@) $@
@@ -129,7 +155,7 @@ musl-git-%:
 	case "$@" in */*) exit 1 ;; esac
 	rm -rf $@.tmp
 	mkdir $@.tmp
-	( cd $@.tmp && tar -jxvf - ) < $<
+	( cd $@.tmp && tar -jxvf - > /dev/null ) < $<
 	rm -rf $@
 	touch $@.tmp/$(patsubst %.orig,%,$@)
 	mv $@.tmp/$(patsubst %.orig,%,$@) $@
@@ -139,7 +165,7 @@ musl-git-%:
 	case "$@" in */*) exit 1 ;; esac
 	rm -rf $@.tmp
 	mkdir $@.tmp
-	( cd $@.tmp && tar -Jxvf - ) < $<
+	( cd $@.tmp && tar -Jxvf - > /dev/null ) < $<
 	rm -rf $@
 	touch $@.tmp/$(patsubst %.orig,%,$@)
 	mv $@.tmp/$(patsubst %.orig,%,$@) $@
@@ -183,14 +209,15 @@ $(BUILD_DIR)/config.mak: | $(BUILD_DIR)
 	printf >$@ '%s\n' \
 	"TARGET = $(TARGET)" \
 	"HOST = $(HOST)" \
-	"MUSL_SRCDIR = $(REL_TOP)/musl-$(MUSL_VER)" \
 	"GCC_SRCDIR = $(REL_TOP)/gcc-$(GCC_VER)" \
 	"BINUTILS_SRCDIR = $(REL_TOP)/binutils-$(BINUTILS_VER)" \
+	$(if $(MUSL_VER),"MUSL_SRCDIR = $(REL_TOP)/musl-$(MUSL_VER)") \
 	$(if $(GMP_VER),"GMP_SRCDIR = $(REL_TOP)/gmp-$(GMP_VER)") \
 	$(if $(MPC_VER),"MPC_SRCDIR = $(REL_TOP)/mpc-$(MPC_VER)") \
 	$(if $(MPFR_VER),"MPFR_SRCDIR = $(REL_TOP)/mpfr-$(MPFR_VER)") \
 	$(if $(ISL_VER),"ISL_SRCDIR = $(REL_TOP)/isl-$(ISL_VER)") \
 	$(if $(LINUX_VER),"LINUX_SRCDIR = $(REL_TOP)/linux-$(LINUX_VER)") \
+	$(if $(MINGW_VER),"MINGW_SRCDIR = $(REL_TOP)/mingw-w64-$(MINGW_VER)") \
 	"-include $(REL_TOP)/config.mak"
 
 all: | $(SRC_DIRS) $(BUILD_DIR) $(BUILD_DIR)/Makefile $(BUILD_DIR)/config.mak

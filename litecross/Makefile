@@ -97,9 +97,12 @@ MAKE += MULTILIB_OSDIRNAMES=
 MAKE += INFO_DEPS= infodir=
 MAKE += ac_cv_prog_lex_root=lex.yy
 MAKE += MAKEINFO=false
+MAKE += STMP_FIXINC=
 
 COMMON_CONFIG += --disable-werror \
 	--target=$(TARGET) --prefix= \
+	CFLAGS="-g0 -O2" CXXFLAGS="-g0 -O2" LDFLAGS="-s" \
+	--with-native-system-header-dir=/include \
 	--libdir=/lib --disable-multilib --disable-multiarch
 
 GCC_CONFIG += --disable-bootstrap \
@@ -114,8 +117,7 @@ FULL_BINUTILS_CONFIG = \
 	--disable-separate-code \
 	$(COMMON_CONFIG) $(BINUTILS_CONFIG) $(TOOLCHAIN_CONFIG) \
 	--with-sysroot=$(SYSROOT) \
-	--enable-deterministic-archives \
-	--enable-gold=yes
+	--enable-deterministic-archives
 
 ifneq ($(findstring mingw,$(TARGET)),)
 # mingw
@@ -189,8 +191,6 @@ FULL_CC = $(CC_PATH) -static --static
 FULL_CXX = $(CXX_PATH) -static --static
 FULL_FC = $(FC_PATH) -static --static
 endif
-
-COMMON_CONFIG += CC="$(FULL_CC)" CXX="$(FULL_CXX)" FC="$(FULL_FC)"
 
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(BUILD) \
 	CC="$(FULL_CC)" CXX="$(FULL_CXX)" FC="$(FULL_FC)"

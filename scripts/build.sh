@@ -29,11 +29,10 @@ function Help() {
     echo "-f: set FC"
     echo "-s: static build"
     echo "-n: with native build"
-    echo "-e: skip error (-Wno-error)"
 }
 
 function ParseArgs() {
-    while getopts "hatT:Cc:x:f:sne" arg; do
+    while getopts "hatT:Cc:x:f:sn" arg; do
         case $arg in
         h)
             Help
@@ -66,9 +65,6 @@ function ParseArgs() {
         n)
             NATIVE_BUILD="1"
             ;;
-        e)
-            SKIP_ERROR="1"
-            ;;
         ?)
             echo "unkonw argument"
             exit 1
@@ -78,9 +74,6 @@ function ParseArgs() {
 }
 
 function FixArgs() {
-    if [ "$SKIP_ERROR" ]; then
-        FLAG="${FLAG} -Wno-error"
-    fi
     mkdir -p "${DIST}"
     if [ $? -ne 0 ]; then
         echo "mkdir dist dir ${DIST} error"
@@ -98,6 +91,7 @@ function Build() {
     DIST_NAME="${DIST}/${TARGET}"
     NATIVE_DIST_NAME="${DIST_NAME}-native"
 
+    rm -rm "${DIST_NAME}"
     make \
         TARGET="${TARGET}" \
         OUTPUT="${DIST_NAME}" \
@@ -108,12 +102,17 @@ function Build() {
     fi
 
     if [ "$NATIVE_BUILD" ]; then
+        rm -rf "${NATIVE_DIST_NAME}"
         PATH="${DIST_NAME}/bin:${PATH}" \
             make \
             TARGET="${TARGET}" \
             OUTPUT="${NATIVE_DIST_NAME}" \
             NATIVE=true \
             install
+        if [ $? -ne 0 ]; then
+            echo "build native ${TARGET} error"
+            exit 1
+        fi
     fi
     if [ "$TEST_BUILD_ONLY" ]; then
         rm -rf "${DIST_NAME}" "${NATIVE_DIST_NAME}"
@@ -176,14 +175,12 @@ i486-w64-mingw32
 i686-w64-mingw32
 x86_64-w64-mingw32'
 
-FLAG="-g0 -O2"
-
 function BuildAll() {
     cat >config.mak <<EOF
 CONFIG_SUB_REV = 28ea239c53a2
 GCC_VER = 11.4.0
 MUSL_VER = 1.2.4
-BINUTILS_VER = 2.41
+BINUTILS_VER = 2.37
 GMP_VER = 6.3.0
 MPC_VER = 1.3.1
 MPFR_VER = 4.2.1
@@ -197,7 +194,6 @@ FC_COMPILER = ${FC}
 CHINA = ${USE_CHINA_MIRROR}
 STATIC = ${STATIC_BUILD}
 
-COMMON_CONFIG += CFLAGS="-g0 -O2" CXXFLAGS="-g0 -O2"
 GCC_CONFIG += --enable-languages=c,c++
 BINUTILS_CONFIG += --enable-compressed-debug-sections=none
 COMMON_CONFIG += --disable-nls
@@ -205,13 +201,7 @@ GCC_CONFIG += --disable-libquadmath --disable-decimal-float
 GCC_CONFIG += --disable-libitm
 GCC_CONFIG += --disable-fixed-point
 GCC_CONFIG += --disable-lto
-
 EOF
-    if [ "$STATIC_BUILD" ]; then
-        echo 'COMMON_CONFIG += LDFLAGS="-s -static --static"' >>config.mak
-    else
-        echo 'COMMON_CONFIG += LDFLAGS="-s"' >>config.mak
-    fi
     if [ "$TARGETS_FILE" ]; then
         if [ -f "$TARGETS_FILE" ]; then
             while read line; do

@@ -86,8 +86,10 @@ check:
 	@which gcc
 	@echo "check g++"
 	@which g++
-	@echo "check libtool"
-	@which libtool
+	@echo "check bison"
+	@which bison
+	@echo "check rsync"
+	@which rsync
 
 # Rules for downloading and verifying sources. Treat an external SOURCES path as
 # immutable and do not try to download anything into it.

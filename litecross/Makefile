@@ -12,7 +12,6 @@ TOOLCHAIN_CONFIG =
 FULL_CC = 
 FULL_CXX = 
 FULL_FC = 
-STATIC = 
 
 XGCC_DIR = $(CURDIR)/obj_gcc/gcc
 XGCC = $(XGCC_DIR)/xgcc -B $(XGCC_DIR) -B $(CURDIR)/obj_sysroot/$(TARGET)/lib
@@ -46,9 +45,9 @@ MINGW_SRCDIR =
 else
 MUSL_SRCDIR = 
 LINUX_SRCDIR = 
-ifneq ($(findstring x86_64,$(TARGET)),)
-MINGW_CRT_CONFIG += --disable-lib32 --enable-lib64 --disable-libarm32
-endif
+# ifneq ($(findstring x86_64,$(TARGET)),)
+# MINGW_CRT_CONFIG += --disable-lib32 --enable-lib64 --disable-libarm32
+# endif
 endif
 
 ifneq ($(findstring fdpic,$(TARGET)),)
@@ -97,39 +96,33 @@ MAKE += MULTILIB_OSDIRNAMES=
 MAKE += INFO_DEPS= infodir=
 MAKE += ac_cv_prog_lex_root=lex.yy
 MAKE += MAKEINFO=false
-MAKE += STMP_FIXINC=
 
 COMMON_CONFIG += --disable-werror \
 	--target=$(TARGET) --prefix= \
-	CFLAGS="-g0 -O2" CXXFLAGS="-g0 -O2" LDFLAGS="-s" \
-	--with-native-system-header-dir=/include \
-	--libdir=/lib --disable-multilib --disable-multiarch
-
-GCC_CONFIG += --disable-bootstrap \
-	--disable-assembly \
 	--with-sysroot=$(SYSROOT) \
-	--disable-decimal-float \
-	--enable-libquadmath --enable-libquadmath-support \
+	--libdir=/lib --disable-multilib --disable-multiarch \
 	--enable-deterministic-archives \
+	CFLAGS="-g0 -O2 -Wno-error" CXXFLAGS="-g0 -O2 -Wno-error" FFLAGS="-g0 -O2 -Wno-error" LDFLAGS="-s -static --static -Wno-error"
+
+GCC_CONFIG += --enable-libquadmath --enable-libquadmath-support \
+	--enable-tls \
+	--disable-libmudflap --disable-libsanitizer \
+	--disable-gnu-indirect-function \
+	--disable-libmpx \
+	--disable-decimal-float \
+	--disable-assembly \
 	--enable-default-pie --enable-static-pie --disable-cet
 
 FULL_BINUTILS_CONFIG = \
 	--disable-separate-code \
-	$(COMMON_CONFIG) $(BINUTILS_CONFIG) $(TOOLCHAIN_CONFIG) \
-	--with-sysroot=$(SYSROOT) \
-	--enable-deterministic-archives
+	$(COMMON_CONFIG) $(BINUTILS_CONFIG) $(TOOLCHAIN_CONFIG)
 
 ifneq ($(findstring mingw,$(TARGET)),)
 # mingw
 FULL_GCC_CONFIG = --enable-languages=c,c++,fortran \
 	$(GCC_CONFIG_FOR_TARGET) \
 	$(COMMON_CONFIG) $(GCC_CONFIG) $(TOOLCHAIN_CONFIG) \
-	--enable-fully-dynamic-string \
-	--enable-libstdcxx-time=yes \
-	--enable-libstdcxx-filesystem-ts=yes \
-	--enable-cloog-backend=isl \
-	--disable-sjlj-exceptions \
-	--with-dwarf2 \
+	--enable-libstdcxx-time \
 	--enable-threads=win32 \
         $(OVERRIDE)
 else
@@ -137,10 +130,7 @@ else
 FULL_GCC_CONFIG = --enable-languages=c,c++,fortran \
 	$(GCC_CONFIG_FOR_TARGET) \
 	$(COMMON_CONFIG) $(GCC_CONFIG) $(TOOLCHAIN_CONFIG) \
-	--enable-tls \
-	--disable-libmudflap --disable-libsanitizer \
-	--disable-gnu-indirect-function \
-	--disable-libmpx \
+	--disable-bootstrap \
 	--enable-initfini-array \
 	--enable-libstdcxx-time=rt \
 	--enable-libstdcxx-time \
@@ -169,28 +159,24 @@ endif
 ifeq ($(NATIVE),)
 SYSROOT = /$(TARGET)
 ifeq ($(CC_COMPILER),)
-CC_PATH = $(shell which gcc)
+CC_PATH = gcc
 else
-CC_PATH = $(shell which $(CC_COMPILER))
+CC_PATH = $(CC_COMPILER)
 endif
 
 ifeq ($(CXX_COMPILER),)
-CXX_PATH = $(shell which g++)
+CXX_PATH = g++
 else
-CXX_PATH = $(shell which $(CXX_COMPILER))
+CXX_PATH = $(CXX_COMPILER)
 endif
-
 ifeq ($(FC_COMPILER),)
-FC_PATH = $(shell which gfortran)
+FC_PATH = gfortran
 else
-FC_PATH = $(shell which $(FC_COMPILER))
+FC_PATH = $(FC_COMPILER)
 endif
-
-ifneq ($(STATIC),)
 FULL_CC = $(CC_PATH) -static --static
 FULL_CXX = $(CXX_PATH) -static --static
 FULL_FC = $(FC_PATH) -static --static
-endif
 
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(BUILD) \
 	CC="$(FULL_CC)" CXX="$(FULL_CXX)" FC="$(FULL_FC)"
@@ -224,6 +210,7 @@ else
 obj_gcc/.lc_built: | obj_sysroot/.lc_libs_crt obj_sysroot/.lc_headers
 endif
 obj_gcc/.lc_configured: obj_binutils/.lc_built
+
 else
 # native build
 SYSROOT = /
@@ -233,6 +220,10 @@ check-target-musl:
 		echo "$(TARGET)-gcc not found in the environment"; \
 		exit 1; \
 	fi
+	@if ! command -v $(TARGET)-g++ >/dev/null; then \
+		echo "$(TARGET)-g++ not found in the environment"; \
+		exit 1; \
+	fi
 	@if ! command -v $(TARGET)-ar >/dev/null; then \
 		echo "$(TARGET)-ar not found in the environment"; \
 		exit 1; \
@@ -240,6 +231,10 @@ check-target-musl:
 check-target-mingw:
 	@if ! command -v $(TARGET)-gcc >/dev/null; then \
 		echo "$(TARGET)-gcc not found in the environment"; \
+		exit 1; \
+	fi
+	@if ! command -v $(TARGET)-g++ >/dev/null; then \
+		echo "$(TARGET)-g++ not found in the environment"; \
 		exit 1; \
 	fi
 	@if ! command -v $(TARGET)-ar >/dev/null; then \
@@ -256,37 +251,30 @@ obj_gcc/gcc/.lc_built: | check-target-musl
 obj_gcc/.lc_built: | check-target-musl
 obj_gcc/.lc_configured: | check-target-musl
 
-ifeq ($(CC_COMPILER),)
-CC_PATH = $(shell which $(TARGET)-gcc)
-else
-CC_PATH = $(shell which $(CC_COMPILER))
-endif
-
-ifeq ($(CXX_COMPILER),)
-CXX_PATH = $(shell which $(TARGET)-g++)
-else
-CXX_PATH = $(shell which $(CXX_COMPILER))
-endif
-
-ifeq ($(FC_COMPILER),)
-FC_PATH = $(shell which $(TARGET)-gfortran)
-else
-FC_PATH = $(shell which $(FC_COMPILER))
-endif
-
-ifneq ($(STATIC),)
+CC_PATH = $(TARGET)-gcc
+CXX_PATH = $(TARGET)-g++
+FC_PATH = $(TARGET)-gfortran
 FULL_CC = $(CC_PATH) -static --static
 FULL_CXX = $(CXX_PATH) -static --static
 FULL_FC = $(FC_PATH) -static --static
-endif
 
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(TARGET) \
 	CC="$(FULL_CC)" CXX="$(FULL_CXX)" FC="$(FULL_FC)"
 FULL_GCC_CONFIG += --build=$(BUILD) --host=$(TARGET) \
 	CC="$(FULL_CC)" CXX="$(FULL_CXX)" FC="$(FULL_FC)"
+
+ifeq ($(findstring mingw,$(TARGET)),)
+# musl
+MAKE += STMP_FIXINC=
+FULL_BINUTILS_CONFIG += --with-native-system-header-dir=/include
+FULL_GCC_CONFIG += --with-native-system-header-dir=/include
 FULL_MUSL_CONFIG += --enable-static \
 	--disable-shared
 MUSL_VARS = 
+else
+# mingw
+endif
+
 endif
 
 ifeq ($(TARGET),)

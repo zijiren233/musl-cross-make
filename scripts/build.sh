@@ -27,12 +27,12 @@ function Help() {
     echo "-c: set CC"
     echo "-x: set CXX"
     echo "-f: set FC"
-    echo "-s: static build"
     echo "-n: with native build"
+    echo "-L: log to std"
 }
 
 function ParseArgs() {
-    while getopts "hatT:Cc:x:f:sn" arg; do
+    while getopts "hatT:Cc:x:f:nL" arg; do
         case $arg in
         h)
             Help
@@ -59,11 +59,11 @@ function ParseArgs() {
         f)
             FC="$OPTARG"
             ;;
-        s)
-            STATIC_BUILD="1"
-            ;;
         n)
             NATIVE_BUILD="1"
+            ;;
+        L)
+            LOG_TO_STD="1"
             ;;
         ?)
             echo "unkonw argument"
@@ -90,28 +90,46 @@ function Build() {
     TARGET="$1"
     DIST_NAME="${DIST}/${TARGET}"
     NATIVE_DIST_NAME="${DIST_NAME}-native"
+    if [ "$LOG_TO_STD" ]; then
+        LOG_FILE="/dev/stdout"
+        NATIVE_LOG_FILE="/dev/stdout"
+    else
+        LOG_FILE="${DIST_NAME}.log"
+        NATIVE_LOG_FILE="${NATIVE_DIST_NAME}.log"
+    fi
 
-    rm -rm "${DIST_NAME}"
+    rm -rf "${DIST_NAME}"
+    echo "build ${TARGET} to ${DIST_NAME}"
     make \
         TARGET="${TARGET}" \
         OUTPUT="${DIST_NAME}" \
-        install
+        NATIVE="" \
+        install >"${LOG_FILE}" 2>&1
     if [ $? -ne 0 ]; then
+        tail -n 100 "${LOG_FILE}"
         echo "build ${TARGET} error"
+        echo "full build log: ${LOG_FILE}"
         exit 1
+    else
+        echo "build ${TARGET} success"
     fi
 
     if [ "$NATIVE_BUILD" ]; then
         rm -rf "${NATIVE_DIST_NAME}"
+        echo "build native ${TARGET} to ${NATIVE_DIST_NAME}"
         PATH="${DIST_NAME}/bin:${PATH}" \
             make \
             TARGET="${TARGET}" \
             OUTPUT="${NATIVE_DIST_NAME}" \
-            NATIVE=true \
-            install
+            NATIVE="true" \
+            install >"${NATIVE_LOG_FILE}" 2>&1
         if [ $? -ne 0 ]; then
+            tail -n 100 "${NATIVE_LOG_FILE}"
             echo "build native ${TARGET} error"
+            echo "full build log: ${NATIVE_LOG_FILE}"
             exit 1
+        else
+            echo "build native ${TARGET} success"
         fi
     fi
     if [ "$TEST_BUILD_ONLY" ]; then
@@ -192,15 +210,8 @@ CC_COMPILER = ${CC}
 CXX_COMPILER = ${CXX}
 FC_COMPILER = ${FC}
 CHINA = ${USE_CHINA_MIRROR}
-STATIC = ${STATIC_BUILD}
 
-GCC_CONFIG += --enable-languages=c,c++
-BINUTILS_CONFIG += --enable-compressed-debug-sections=none
-COMMON_CONFIG += --disable-nls
-GCC_CONFIG += --disable-libquadmath --disable-decimal-float
-GCC_CONFIG += --disable-libitm
-GCC_CONFIG += --disable-fixed-point
-GCC_CONFIG += --disable-lto
+# BINUTILS_CONFIG += --enable-compressed-debug-sections=none
 EOF
     if [ "$TARGETS_FILE" ]; then
         if [ -f "$TARGETS_FILE" ]; then

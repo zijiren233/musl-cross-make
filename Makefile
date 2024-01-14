@@ -56,8 +56,10 @@ MINGW_SITE = $(SOURCEFORGE_MIRROT)/project/mingw-w64/mingw-w64/mingw-w64-release
 LINUX_HEADERS_SITE = https://ftp.barfooze.de/pub/sabotage/tarballs
 
 ifneq ($(findstring musl,$(TARGET)),)
+# musl
 MINGW_VER = 
 else
+# mingw
 MUSL_VER = 
 LINUX_VER = 
 endif
@@ -140,7 +142,7 @@ musl-git-%:
 	rm -rf $@.tmp
 	git clone $(MUSL_REPO) $@.tmp
 	cd $@.tmp && git reset --hard $(patsubst musl-git-%,%,$@) && git fsck
-	test ! -d patches/$@ || cat patches/$@/* | ( cd $@.tmp && patch -p1 )
+	test ! -d patches/$@ || cat $(wildcard patches/$@/*) | ( cd $@.tmp && patch -p1 )
 	mv $@.tmp $@
 
 %.orig: $(SOURCES)/%.tar.gz
@@ -173,23 +175,37 @@ musl-git-%:
 	mv $@.tmp/$(patsubst %.orig,%,$@) $@
 	rm -rf $@.tmp
 
+ifeq ($(findstring mingw,$(TARGET)),)
+# musl
 %: %.orig | $(SOURCES)/config.sub
 	case "$@" in */*) exit 1 ;; esac
 	rm -rf $@.tmp
 	mkdir $@.tmp
 	( cd $@.tmp && $(COWPATCH) -I ../$< )
-	test ! -d patches/$@ || cat patches/$@/* | ( cd $@.tmp && $(COWPATCH) -p1 )
+	test ! -d patches/$@ || cat $(wildcard patches/$@/*) | ( cd $@.tmp && $(COWPATCH) -p1 )
 	if test -f $</configfsf.sub ; then cs=configfsf.sub ; elif test -f $</config.sub ; then cs=config.sub ; else exit 0 ; fi ; rm -f $@.tmp/$$cs && cp -f $(SOURCES)/config.sub $@.tmp/$$cs && chmod +x $@.tmp/$$cs
 	rm -rf $@
 	mv $@.tmp $@
 	$(COWPATCH) -S gcc-$(GCC_VER)/libstdc++-v3
-
+else
+# mingw
+# fix ld: unrecognized option '-z'
+%: %.orig | $(SOURCES)/config.sub
+	case "$@" in */*) exit 1 ;; esac
+	rm -rf $@.tmp
+	mkdir $@.tmp
+	( cd $@.tmp && $(COWPATCH) -I ../$< )
+	test ! -d patches/$@ || cat $(filter-out %static-pie.diff,$(wildcard patches/$@/*)) | ( cd $@.tmp && $(COWPATCH) -p1 )
+	if test -f $</configfsf.sub ; then cs=configfsf.sub ; elif test -f $</config.sub ; then cs=config.sub ; else exit 0 ; fi ; rm -f $@.tmp/$$cs && cp -f $(SOURCES)/config.sub $@.tmp/$$cs && chmod +x $@.tmp/$$cs
+	rm -rf $@
+	mv $@.tmp $@
+	$(COWPATCH) -S gcc-$(GCC_VER)/libstdc++-v3
+endif
 
 # Add deps for all patched source dirs on their patchsets
 $(foreach dir,$(notdir $(basename $(basename $(basename $(wildcard hashes/*))))),$(eval $(dir): $$(wildcard patches/$(dir) patches/$(dir)/*)))
 
 extract_all: | $(SRC_DIRS)
-
 
 # Rules for building.
 

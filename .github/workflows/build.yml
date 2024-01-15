@@ -23,4 +23,4 @@ jobs:
 
       - name: Build
         run: |
-          bash scripts/build.sh -t
+          bash scripts/build.sh -tn

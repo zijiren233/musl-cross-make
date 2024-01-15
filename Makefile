@@ -3,12 +3,13 @@ SOURCES = sources
 CONFIG_SUB_REV = 28ea239c53a2
 GCC_VER = 11.4.0
 MUSL_VER = 1.2.4
-BINUTILS_VER = 2.41
+BINUTILS_VER = 2.37
 GMP_VER = 6.3.0
 MPC_VER = 1.3.1
 MPFR_VER = 4.2.1
 ISL_VER = 
 LINUX_VER = 
+LINUX_VER = 4.19.274
 MINGW_VER = v11.0.1
 CHINA = 
 
@@ -79,7 +80,7 @@ clean:
 	rm -rf gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-*
 
 distclean: clean
-	rm -rf sources dist
+	rm -rf sources
 
 check:
 	@echo "check bzip2"
@@ -182,7 +183,7 @@ ifeq ($(findstring mingw,$(TARGET)),)
 	rm -rf $@.tmp
 	mkdir $@.tmp
 	( cd $@.tmp && $(COWPATCH) -I ../$< )
-	test ! -d patches/$@ || cat $(wildcard patches/$@/*) | ( cd $@.tmp && $(COWPATCH) -p1 )
+	test ! -d patches/$@ || cat $(filter-out %-mingw.diff,$(wildcard patches/$@/*)) | ( cd $@.tmp && $(COWPATCH) -p1 )
 	if test -f $</configfsf.sub ; then cs=configfsf.sub ; elif test -f $</config.sub ; then cs=config.sub ; else exit 0 ; fi ; rm -f $@.tmp/$$cs && cp -f $(SOURCES)/config.sub $@.tmp/$$cs && chmod +x $@.tmp/$$cs
 	rm -rf $@
 	mv $@.tmp $@
@@ -195,7 +196,7 @@ else
 	rm -rf $@.tmp
 	mkdir $@.tmp
 	( cd $@.tmp && $(COWPATCH) -I ../$< )
-	test ! -d patches/$@ || cat $(filter-out %static-pie.diff,$(wildcard patches/$@/*)) | ( cd $@.tmp && $(COWPATCH) -p1 )
+	test ! -d patches/$@ || cat $(filter-out %-musl.diff,$(wildcard patches/$@/*)) | ( cd $@.tmp && $(COWPATCH) -p1 )
 	if test -f $</configfsf.sub ; then cs=configfsf.sub ; elif test -f $</config.sub ; then cs=config.sub ; else exit 0 ; fi ; rm -f $@.tmp/$$cs && cp -f $(SOURCES)/config.sub $@.tmp/$$cs && chmod +x $@.tmp/$$cs
 	rm -rf $@
 	mv $@.tmp $@

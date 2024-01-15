@@ -9,7 +9,7 @@ index 59a456cd496..dbfddea41bd 100644
 -  "TARGET_HARD_FLOAT"
 +  "(TARGET_68881 && TARGET_68040) || TARGET_COLDFIRE_FPU"
    "")
- 
+
  (define_insn "sqrt<mode>2_68881"
    [(set (match_operand:FP 0 "nonimmediate_operand" "=f")
  	(sqrt:FP (match_operand:FP 1 "general_operand" "f<FP:dreg>m")))]

@@ -94,7 +94,7 @@ index 357b0bed067..528add999f2 100644
 @@ -5385,7 +5389,7 @@ case ${target} in
  		tmake_file="${cpu_type}/t-${cpu_type} ${tmake_file}"
  		;;
- 
+
 -	sh[123456ble]*-*-* | sh-*-*)
 +	sh[123456blej]*-*-* | sh-*-*)
  		c_target_objs="${c_target_objs} sh-c.o"
@@ -109,7 +109,7 @@ index 1564109c942..798c1c1c1a3 100644
    model_names[sh_atomic_model::soft_tcb] = "soft-tcb";
    model_names[sh_atomic_model::soft_imask] = "soft-imask";
 +  model_names[sh_atomic_model::hard_cas] = "hard-cas";
- 
+
    const char* model_cdef_names[sh_atomic_model::num_models];
    model_cdef_names[sh_atomic_model::none] = "NONE";
 @@ -693,6 +694,7 @@ parse_validate_atomic_model_option (const char* str)
@@ -117,18 +117,18 @@ index 1564109c942..798c1c1c1a3 100644
    model_cdef_names[sh_atomic_model::soft_tcb] = "SOFT_TCB";
    model_cdef_names[sh_atomic_model::soft_imask] = "SOFT_IMASK";
 +  model_cdef_names[sh_atomic_model::hard_cas] = "HARD_CAS";
- 
+
    sh_atomic_model ret;
    ret.type = sh_atomic_model::none;
 @@ -771,6 +773,9 @@ got_mode_name:;
    if (ret.type == sh_atomic_model::soft_imask && TARGET_USERMODE)
      err_ret ("cannot use atomic model %s in user mode", ret.name);
- 
+
 +  if (ret.type == sh_atomic_model::hard_cas && !TARGET_SHJ2)
 +    err_ret ("atomic model %s is only available J2 targets", ret.name);
 +
    return ret;
- 
+
  #undef err_ret
 @@ -827,6 +832,8 @@ sh_option_override (void)
      sh_cpu = PROCESSOR_SH2E;
@@ -149,14 +149,14 @@ index d2280e2ffe6..3a54a896721 100644
  #define SUPPORT_SH2A_SINGLE 1
 +#define SUPPORT_SHJ2 1
  #endif
- 
+
  #define TARGET_DIVIDE_CALL_DIV1 (sh_div_strategy == SH_DIV_CALL_DIV1)
 @@ -117,6 +118,7 @@ extern int code_for_indirect_jump_scratch;
  #define SELECT_SH4A_SINGLE_ONLY  (MASK_SH4A | SELECT_SH4_SINGLE_ONLY)
  #define SELECT_SH4A		 (MASK_SH4A | SELECT_SH4)
  #define SELECT_SH4A_SINGLE	 (MASK_SH4A | SELECT_SH4_SINGLE)
 +#define SELECT_SHJ2		 (MASK_SHJ2 | SELECT_SH2)
- 
+
  #if SUPPORT_SH1
  #define SUPPORT_SH2 1
 @@ -124,6 +126,7 @@ extern int code_for_indirect_jump_scratch;
@@ -173,7 +173,7 @@ index d2280e2ffe6..3a54a896721 100644
  		   | MASK_HARD_SH4 | MASK_FPU_SINGLE \
 -		   | MASK_FPU_SINGLE_ONLY)
 +		   | MASK_FPU_SINGLE_ONLY | MASK_SHJ2)
- 
+
  /* This defaults us to big-endian.  */
  #ifndef TARGET_ENDIAN_DEFAULT
 @@ -231,7 +234,8 @@ extern int code_for_indirect_jump_scratch;
@@ -183,34 +183,34 @@ index d2280e2ffe6..3a54a896721 100644
 -%{m4al:-dsp}"
 +%{m4al:-dsp} \
 +%{mj2:-isa=j2}"
- 
+
  #define ASM_SPEC SH_ASM_SPEC
- 
+
 @@ -347,6 +351,7 @@ struct sh_atomic_model
      hard_llcs,
      soft_tcb,
      soft_imask,
 +    hard_cas,
- 
+
      num_models
    };
 @@ -390,6 +395,9 @@ extern const sh_atomic_model& selected_atomic_model (void);
  #define TARGET_ATOMIC_SOFT_IMASK \
    (selected_atomic_model ().type == sh_atomic_model::soft_imask)
- 
+
 +#define TARGET_ATOMIC_HARD_CAS \
 +  (selected_atomic_model ().type == sh_atomic_model::hard_cas)
 +
  #endif // __cplusplus
- 
+
  #define SUBTARGET_OVERRIDE_OPTIONS (void) 0
 @@ -1484,7 +1492,7 @@ extern bool current_function_interrupt;
- 
+
  /* Nonzero if the target supports dynamic shift instructions
     like shad and shld.  */
 -#define TARGET_DYNSHIFT (TARGET_SH3 || TARGET_SH2A)
 +#define TARGET_DYNSHIFT (TARGET_SH3 || TARGET_SH2A || TARGET_SHJ2)
- 
+
  /* The cost of using the dynamic shift insns (shad, shld) are the same
     if they are available.  If they are not available a library function will
 @@ -1747,6 +1755,7 @@ enum processor_type {
@@ -228,7 +228,7 @@ index b4755a812f3..0989a1c18da 100644
 @@ -65,6 +65,10 @@ m2e
  Target RejectNegative Condition(SUPPORT_SH2E)
  Generate SH2e code.
- 
+
 +mj2
 +Target RejectNegative Mask(SHJ2) Condition(SUPPORT_SHJ2)
 +Generate J2 code.
@@ -253,7 +253,7 @@ index 2b43f8edb86..118fc5d06db 100644
 @@ -306,6 +309,57 @@
  }
    [(set_attr "length" "14")])
- 
+
 +(define_expand "atomic_compare_and_swapsi_cas"
 +  [(set (match_operand:SI 0 "register_operand" "=r")
 +	(unspec_volatile:SI
@@ -323,7 +323,7 @@ index 888f8ff7f25..29fd6ae45fd 100644
      for lib in `echo $$abi|tr , ' '` ; do \
        if test "`echo $$multilibs|sed s/$$lib//`" != "$$multilibs"; then \
 @@ -63,9 +64,9 @@ MULTILIB_MATCHES = $(shell \
- 
+
  # SH1 and SH2A support big endian only.
  ifeq ($(DEFAULT_ENDIAN),ml)
 -MULTILIB_EXCEPTIONS = m1 ml/m1 m2a* ml/m2a* $(TM_MULTILIB_EXCEPTIONS_CONFIG)
@@ -332,7 +332,7 @@ index 888f8ff7f25..29fd6ae45fd 100644
 -MULTILIB_EXCEPTIONS = ml/m1 ml/m2a* $(TM_MULTILIB_EXCEPTIONS_CONFIG)
 +MULTILIB_EXCEPTIONS = ml/m1 ml/m2a* ml/mj2 $(TM_MULTILIB_EXCEPTIONS_CONFIG)
  endif
- 
+
  MULTILIB_OSDIRNAMES = \
 @@ -87,7 +88,8 @@ MULTILIB_OSDIRNAMES = \
  	m4a-single-only=!m4a-single-only $(OTHER_ENDIAN)/m4a-single-only=!$(OTHER_ENDIAN)/m4a-single-only \
@@ -341,6 +341,6 @@ index 888f8ff7f25..29fd6ae45fd 100644
 -	m4al=!m4al $(OTHER_ENDIAN)/m4al=!$(OTHER_ENDIAN)/m4al
 +	m4al=!m4al $(OTHER_ENDIAN)/m4al=!$(OTHER_ENDIAN)/m4al \
 +	mj2=!j2
- 
+
  $(out_object_file): gt-sh.h
  gt-sh.h : s-gtype ; @true

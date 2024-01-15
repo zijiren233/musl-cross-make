@@ -16,7 +16,7 @@ jobs:
 
       - name: Build
         run: |
-          bash scripts/build.sh
+          bash scripts/build.sh -an
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:

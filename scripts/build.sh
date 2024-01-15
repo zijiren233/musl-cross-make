@@ -99,6 +99,7 @@ function Build() {
     fi
 
     rm -rf "${DIST_NAME}"
+    make clean
     echo "build ${TARGET} to ${DIST_NAME}"
     make \
         TARGET="${TARGET}" \
@@ -106,7 +107,9 @@ function Build() {
         NATIVE="" \
         install >"${LOG_FILE}" 2>&1
     if [ $? -ne 0 ]; then
-        tail -n 100 "${LOG_FILE}"
+        if [ ! "$LOG_TO_STD" ]; then
+            tail -n 100 "${LOG_FILE}"
+        fi
         echo "build ${TARGET} error"
         echo "full build log: ${LOG_FILE}"
         exit 1
@@ -116,6 +119,7 @@ function Build() {
 
     if [ "$NATIVE_BUILD" ]; then
         rm -rf "${NATIVE_DIST_NAME}"
+        make clean
         echo "build native ${TARGET} to ${NATIVE_DIST_NAME}"
         PATH="${DIST_NAME}/bin:${PATH}" \
             make \
@@ -124,7 +128,9 @@ function Build() {
             NATIVE="true" \
             install >"${NATIVE_LOG_FILE}" 2>&1
         if [ $? -ne 0 ]; then
-            tail -n 100 "${NATIVE_LOG_FILE}"
+            if [ ! "$LOG_TO_STD" ]; then
+                tail -n 100 "${NATIVE_LOG_FILE}"
+            fi
             echo "build native ${TARGET} error"
             echo "full build log: ${NATIVE_LOG_FILE}"
             exit 1
@@ -152,7 +158,6 @@ function Build() {
             rm -rf "${DIST_NAME}" "${NATIVE_DIST_NAME}"
         fi
     fi
-    make clean
 }
 
 ALL_TARGETS='aarch64-linux-musl
@@ -203,7 +208,7 @@ GMP_VER = 6.3.0
 MPC_VER = 1.3.1
 MPFR_VER = 4.2.1
 ISL_VER = 
-LINUX_VER = 5.15.2
+LINUX_VER = 4.19.274
 MINGW_VER = v11.0.1
 
 CC_COMPILER = ${CC}
@@ -211,7 +216,7 @@ CXX_COMPILER = ${CXX}
 FC_COMPILER = ${FC}
 CHINA = ${USE_CHINA_MIRROR}
 
-# BINUTILS_CONFIG += --enable-compressed-debug-sections=none
+BINUTILS_CONFIG += --enable-compressed-debug-sections=none
 EOF
     if [ "$TARGETS_FILE" ]; then
         if [ -f "$TARGETS_FILE" ]; then

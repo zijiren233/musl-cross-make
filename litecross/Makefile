@@ -72,6 +72,11 @@ ifneq ($(findstring s390x,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-long-double-128
 endif
 
+ifeq ($(findstring riscv64,$(TARGET)),)
+# not riscv64
+COMMON_CONFIG += --disable-shared
+endif
+
 ifneq ($(filter %sf,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-float=soft
 endif
@@ -82,10 +87,10 @@ endif
 
 ifneq ($(findstring mingw,$(TARGET)),)
 # mingw
-GCC_CONFIG_FOR_TARGET += --enable-libstdcxx-time \
-	--enable-fully-dynamic-string \
+GCC_CONFIG_FOR_TARGET += --enable-fully-dynamic-string \
 	--disable-sjlj-exceptions \
 	--enable-threads=win32
+
 ifneq ($(findstring x86_64,$(TARGET)),)
 # 64
 MINGW_CRT_CONFIG += --disable-lib32 --enable-lib64 --disable-libarm32
@@ -96,17 +101,15 @@ endif
 else
 # musl
 GCC_CONFIG_FOR_TARGET += --disable-bootstrap \
-	--enable-initfini-array \
-	--enable-libstdcxx-time=rt \
-	--enable-libstdcxx-time
+	--enable-initfini-array
 # # https://wiki.musl-libc.org/getting-started.html#Notes_on_ARM_Float_Mode
-ifneq ($(findstring armv5,$(TARGET)),)
-GCC_CONFIG_FOR_TARGET += --with-arch=armv5te --with-fpu=vfp
-elifneq ($(findstring armv6,$(TARGET)),)
-GCC_CONFIG_FOR_TARGET += --with-arch=armv6 --with-fpu=vfp
-elifneq ($(findstring armv7,$(TARGET)),)
-GCC_CONFIG_FOR_TARGET += --with-arch=armv7-a --with-fpu=vfpv3
-endif
+# ifneq ($(findstring armv5,$(TARGET)),)
+# GCC_CONFIG_FOR_TARGET += --with-arch=armv5te --with-fpu=vfp
+# else ifneq ($(findstring armv6,$(TARGET)),)
+# GCC_CONFIG_FOR_TARGET += --with-arch=armv6 --with-fpu=vfpv2
+# else ifneq ($(findstring armv7,$(TARGET)),)
+# GCC_CONFIG_FOR_TARGET += --with-arch=armv7-a --with-fpu=vfpv3
+# endif
 endif
 
 ifneq ($(LIBTOOL),)
@@ -127,7 +130,6 @@ COMMON_CONFIG += --disable-werror \
 	--target=$(TARGET) --prefix= \
 	--with-sysroot=$(SYSROOT) \
 	--libdir=/lib --disable-multilib --disable-multiarch \
-    --disable-shared \
 	--enable-deterministic-archives \
 	CFLAGS="$(FULL_C_FLAGS)" CXXFLAGS="$(FULL_CXX_FLAGS)" FFLAGS="$(FULL_FC_FLAGS)" LDFLAGS="$(FULL_LD_FLAGS)"
 
@@ -136,8 +138,8 @@ GCC_CONFIG += --enable-libquadmath --enable-libquadmath-support \
 	--disable-libmudflap --disable-libsanitizer \
 	--disable-gnu-indirect-function \
 	--disable-libmpx \
-	--disable-decimal-float \
 	--disable-assembly \
+	--enable-libstdcxx-time \
 	--enable-default-pie --enable-static-pie --disable-cet
 
 FULL_BINUTILS_CONFIG = \

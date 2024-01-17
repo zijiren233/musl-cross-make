@@ -1,6 +1,7 @@
 diff --git a/gcc/system.h b/gcc/system.h
 --- a/gcc/system.h
 +++ b/gcc/system.h
-@@ -775,1 +775,1 @@
+@@ -775,1 +775,2 @@
 -#define abort() fancy_abort (__FILE__, __LINE__, __FUNCTION__)
 +/* #define abort() fancy_abort (__FILE__, __LINE__, __FUNCTION__) */
++

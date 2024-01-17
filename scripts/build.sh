@@ -109,9 +109,9 @@ function Build() {
     if [ $? -ne 0 ]; then
         if [ ! "$LOG_TO_STD" ]; then
             tail -n 100 "${LOG_FILE}"
+            echo "full build log: ${LOG_FILE}"
         fi
         echo "build ${TARGET} error"
-        echo "full build log: ${LOG_FILE}"
         exit 1
     else
         echo "build ${TARGET} success"
@@ -130,9 +130,9 @@ function Build() {
         if [ $? -ne 0 ]; then
             if [ ! "$LOG_TO_STD" ]; then
                 tail -n 100 "${NATIVE_LOG_FILE}"
+                echo "full build log: ${NATIVE_LOG_FILE}"
             fi
             echo "build native ${TARGET} error"
-            echo "full build log: ${NATIVE_LOG_FILE}"
             exit 1
         else
             echo "build native ${TARGET} success"
@@ -216,6 +216,11 @@ CXX_COMPILER = ${CXX}
 FC_COMPILER = ${FC}
 CHINA = ${USE_CHINA_MIRROR}
 
+COMMON_CONFIG += --disable-nls
+GCC_CONFIG += --disable-libquadmath --disable-decimal-float
+GCC_CONFIG += --disable-libitm
+GCC_CONFIG += --disable-fixed-point
+GCC_CONFIG += --disable-lto
 BINUTILS_CONFIG += --enable-compressed-debug-sections=none
 EOF
     if [ "$TARGETS_FILE" ]; then

@@ -29,10 +29,11 @@ function Help() {
     echo "-f: set FC"
     echo "-n: with native build"
     echo "-L: log to std"
+    echo "-O: set optimize level"
 }
 
 function ParseArgs() {
-    while getopts "hatT:Cc:x:f:nL" arg; do
+    while getopts "hatT:Cc:x:f:nLO:" arg; do
         case $arg in
         h)
             Help
@@ -64,6 +65,9 @@ function ParseArgs() {
             ;;
         L)
             LOG_TO_STD="1"
+            ;;
+        O)
+            OPTIMIZE_LEVEL="$OPTARG"
             ;;
         ?)
             echo "unkonw argument"
@@ -215,6 +219,7 @@ CC_COMPILER = ${CC}
 CXX_COMPILER = ${CXX}
 FC_COMPILER = ${FC}
 CHINA = ${USE_CHINA_MIRROR}
+OPTIMIZE_LEVEL = ${OPTIMIZE_LEVEL}
 
 COMMON_CONFIG += --disable-nls
 GCC_CONFIG += --disable-libquadmath --disable-decimal-float

@@ -14,9 +14,10 @@ FULL_CXX =
 FULL_FC = 
 STATIC_FLAGS = -static --static
 COMMON_FLAGS = -Wno-error
-C_FLAGS = -g0 -Os
-CXX_FLAGS = -g0 -Os
-FC_FLAGS = -g0 -Os
+OPTIMIZE_LEVEL = 
+C_FLAGS = -g0
+CXX_FLAGS = -g0
+FC_FLAGS = -g0
 LD_FLAGS = -s $(STATIC_FLAGS)
 
 XGCC_DIR = $(CURDIR)/obj_gcc/gcc
@@ -29,6 +30,16 @@ XRC  = $(CURDIR)/obj_binutils/binutils/windres --preprocessor=$(XGCC_DIR)/xgcc -
 DLLTOOL = $(CURDIR)/obj_binutils/binutils/dlltool
 
 -include config.mak
+
+ifeq ($(OPTIMIZE_LEVEL),)
+C_FLAGS += -Os
+CXX_FLAGS += -Os
+FC_FLAGS += -Os
+else
+C_FLAGS = -O$(OPTIMIZE_LEVEL)
+CXX_FLAGS = -O$(OPTIMIZE_LEVEL)
+FC_FLAGS = -O$(OPTIMIZE_LEVEL)
+endif
 
 ifeq ($(CPUS),)
 CPUS = $(shell if command -v nproc >/dev/null 2>&1; then nproc; else echo 1; fi)

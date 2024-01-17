@@ -16,6 +16,8 @@ function Init() {
         echo "mkdir dist dir ${DIST} error"
         exit 1
     fi
+    OIFS="$IFS"
+    IFS=$'\n\t, '
 }
 
 function Help() {
@@ -245,12 +247,10 @@ EOF
     fi
 
     for line in $TARGETS; do
-        if [ -z "$line" ] || [ "${line:0:1}" == "#" ]; then
+        if [ ! "$line" ] || [ -z "$line" ] || [ "${line:0:1}" == "#" ]; then
             continue
         fi
-        for target in ${line//,/ }; do
-            Build "$target"
-        done
+        Build "$line"
     done
 }
 

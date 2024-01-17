@@ -12,11 +12,8 @@ concurrency:
 
 jobs:
   build_host:
-    strategy:
-      matrix:
-        platform: [ubuntu-latest]
     name: Build Host
-    runs-on: ${{ matrix.platform }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,12 +30,9 @@ jobs:
           name: x86_64-linux-musl-native
           path: dist/x86_64-linux-musl-native
 
-  build_aarch64:
-    strategy:
-      matrix:
-        platform: [ubuntu-latest]
-    name: Build aarch64
-    runs-on: ${{ matrix.platform }}
+  build_job_1:
+    name: Build
+    runs-on: ubuntu-latest
     needs: build_host
     steps:
       - name: Download native
@@ -51,19 +45,18 @@ jobs:
       - name: Build
         run: |
           chmod -R 0755 /tmp/x86_64-linux-musl-native
+          TARGETS="$(sed -n '11,20p' scripts/triples.txt)"
+          echo "$TARGETS"
           bash scripts/build.sh \
             -nt \
             -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
             -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
             -T \
-            aarch64-linux-musl
+            "$TARGETS"
 
-  build_arm:
-    strategy:
-      matrix:
-        platform: [ubuntu-latest]
-    name: Build arm
-    runs-on: ${{ matrix.platform }}
+  build_job_2:
+    name: Build
+    runs-on: ubuntu-latest
     needs: build_host
     steps:
       - name: Download native
@@ -76,26 +69,18 @@ jobs:
       - name: Build
         run: |
           chmod -R 0755 /tmp/x86_64-linux-musl-native
+          TARGETS="$(sed -n '11,20p' scripts/triples.txt)"
+          echo "$TARGETS"
           bash scripts/build.sh \
             -nt \
             -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
             -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
             -T \
-            "arm-linux-musleabi \
-            arm-linux-musleabihf \
-            armv5-linux-musleabi \
-            armv5-linux-musleabihf \
-            armv6-linux-musleabi \
-            armv6-linux-musleabihf \
-            armv7-linux-musleabi \
-            armv7-linux-musleabihf"
+            "$TARGETS"
 
-  build_x86:
-    strategy:
-      matrix:
-        platform: [ubuntu-latest]
-    name: Build x86
-    runs-on: ${{ matrix.platform }}
+  build_job_3:
+    name: Build
+    runs-on: ubuntu-latest
     needs: build_host
     steps:
       - name: Download native
@@ -108,22 +93,18 @@ jobs:
       - name: Build
         run: |
           chmod -R 0755 /tmp/x86_64-linux-musl-native
+          TARGETS="$(sed -n '21,30p' scripts/triples.txt)"
+          echo "$TARGETS"
           bash scripts/build.sh \
             -nt \
             -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
             -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
             -T \
-            "i686-linux-musl \
-            i486-linux-musl \
-            x86_64-linux-musl \
-            x86_64-linux-muslx32"
+            "$TARGETS"
 
-  build_mips:
-    strategy:
-      matrix:
-        platform: [ubuntu-latest]
-    name: Build mips
-    runs-on: ${{ matrix.platform }}
+  build_job_4:
+    name: Build
+    runs-on: ubuntu-latest
     needs: build_host
     steps:
       - name: Download native
@@ -136,31 +117,18 @@ jobs:
       - name: Build
         run: |
           chmod -R 0755 /tmp/x86_64-linux-musl-native
+          TARGETS="$(sed -n '31,40p' scripts/triples.txt)"
+          echo "$TARGETS"
           bash scripts/build.sh \
             -nt \
             -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
             -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
             -T \
-            "mips-linux-musl \
-            mips-linux-muslsf \
-            mips-linux-musln32sf \
-            mips64-linux-musl \
-            mips64-linux-musln32 \
-            mips64-linux-musln32sf \
-            mips64el-linux-musl \
-            mips64el-linux-musln32 \
-            mips64el-linux-musln32sf \
-            mipsel-linux-musl \
-            mipsel-linux-musln32 \
-            mipsel-linux-musln32sf \
-            mipsel-linux-muslsf"
+            "$TARGETS"
 
-  build_powerpc:
-    strategy:
-      matrix:
-        platform: [ubuntu-latest]
-    name: Build powerpc
-    runs-on: ${{ matrix.platform }}
+  build_job_5:
+    name: Build
+    runs-on: ubuntu-latest
     needs: build_host
     steps:
       - name: Download native
@@ -173,24 +141,18 @@ jobs:
       - name: Build
         run: |
           chmod -R 0755 /tmp/x86_64-linux-musl-native
+          TARGETS="$(sed -n '41,50p' scripts/triples.txt)"
+          echo "$TARGETS"
           bash scripts/build.sh \
             -nt \
             -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
             -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
             -T \
-            "powerpc-linux-musl \
-            powerpc-linux-muslsf \
-            powerpc64-linux-musl \
-            powerpc64le-linux-musl \
-            powerpcle-linux-musl \
-            powerpcle-linux-muslsf"
+            "$TARGETS"
 
-  build_riscv:
-    strategy:
-      matrix:
-        platform: [ubuntu-latest]
-    name: Build riscv
-    runs-on: ${{ matrix.platform }}
+  build_job_6:
+    name: Build
+    runs-on: ubuntu-latest
     needs: build_host
     steps:
       - name: Download native
@@ -203,61 +165,11 @@ jobs:
       - name: Build
         run: |
           chmod -R 0755 /tmp/x86_64-linux-musl-native
+          TARGETS="$(sed -n '51,60p' scripts/triples.txt)"
+          echo "$TARGETS"
           bash scripts/build.sh \
             -nt \
             -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
             -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
             -T \
-            riscv64-linux-musl
-
-  build_s390x:
-    strategy:
-      matrix:
-        platform: [ubuntu-latest]
-    name: Build s390x
-    runs-on: ${{ matrix.platform }}
-    needs: build_host
-    steps:
-      - name: Download native
-        uses: actions/download-artifact@v4
-        with:
-          name: x86_64-linux-musl-native
-          path: /tmp/x86_64-linux-musl-native
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build
-        run: |
-          chmod -R 0755 /tmp/x86_64-linux-musl-native
-          bash scripts/build.sh \
-            -nt \
-            -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
-            -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
-            -T \
-            s390x-linux-musl
-
-  build_mingw:
-    strategy:
-      matrix:
-        platform: [ubuntu-latest]
-    name: Build mingw
-    runs-on: ${{ matrix.platform }}
-    needs: build_host
-    steps:
-      - name: Download native
-        uses: actions/download-artifact@v4
-        with:
-          name: x86_64-linux-musl-native
-          path: /tmp/x86_64-linux-musl-native
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build
-        run: |
-          chmod -R 0755 /tmp/x86_64-linux-musl-native
-          bash scripts/build.sh \
-            -nt \
-            -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
-            -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
-            -T \
-            "i486-w64-mingw32 \
-            i686-w64-mingw32 \
-            x86_64-w64-mingw32"
+            "$TARGETS"

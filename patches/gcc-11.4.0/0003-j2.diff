@@ -344,3 +344,4 @@ index 888f8ff7f25..29fd6ae45fd 100644
 
  $(out_object_file): gt-sh.h
  gt-sh.h : s-gtype ; @true
+

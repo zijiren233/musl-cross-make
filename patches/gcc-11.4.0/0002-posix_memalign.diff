@@ -28,3 +28,4 @@ index 1b0bfe37852..d7b2b19bb3c 100644
      return __ptr;
    else
      return NULL;
+

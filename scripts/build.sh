@@ -112,7 +112,7 @@ function Build() {
         install >"${LOG_FILE}" 2>&1
     if [ $? -ne 0 ]; then
         if [ ! "$LOG_TO_STD" ]; then
-            tail -n 100 "${LOG_FILE}"
+            cat "${LOG_FILE}"
             echo "full build log: ${LOG_FILE}"
         fi
         echo "build ${TARGET} error"
@@ -133,7 +133,7 @@ function Build() {
             install >"${NATIVE_LOG_FILE}" 2>&1
         if [ $? -ne 0 ]; then
             if [ ! "$LOG_TO_STD" ]; then
-                tail -n 100 "${NATIVE_LOG_FILE}"
+                cat "${NATIVE_LOG_FILE}"
                 echo "full build log: ${NATIVE_LOG_FILE}"
             fi
             echo "build native ${TARGET} error"

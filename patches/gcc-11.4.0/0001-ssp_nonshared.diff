@@ -12,3 +12,4 @@ index 7837553958b..3c81c5798d8 100644
  #else
  #define LINK_SSP_SPEC "%{fstack-protector|fstack-protector-all" \
  		       "|fstack-protector-strong|fstack-protector-explicit" \
+

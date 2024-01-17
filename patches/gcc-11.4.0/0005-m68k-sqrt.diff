@@ -18,3 +18,4 @@ index 59a456cd496..dbfddea41bd 100644
  {
    if (FP_REG_P (operands[1]))
      return "f<FP:round>sqrt%.x %1,%0";
+

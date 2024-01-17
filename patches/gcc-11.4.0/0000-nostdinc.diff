@@ -24,3 +24,4 @@ index 2ff48941754..01ecc8c42d9 100644
 
  GCC_TARGET_TOOL(ar, AR_FOR_TARGET, AR, [binutils/ar])
  GCC_TARGET_TOOL(as, AS_FOR_TARGET, AS, [gas/as-new])
+

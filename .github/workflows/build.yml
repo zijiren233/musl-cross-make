@@ -20,21 +20,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Build temp
+      - name: Build
         run: |
           bash scripts/build.sh \
             -n \
-            -O0 \
-            -T \
-            x86_64-linux-musl
-          mv dist/x86_64-linux-musl-native /tmp
-          rm -rf dist
-      - name: Build host
-        run: |
-          bash scripts/build.sh -n \
             -O2 \
-            -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
-            -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
             -T \
             x86_64-linux-musl
       - name: Upload artifact

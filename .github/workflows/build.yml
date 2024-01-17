@@ -23,4 +23,4 @@ jobs:
 
       - name: Build
         run: |
-          bash scripts/build.sh -tn
+          bash scripts/build.sh -tnT x86_64-linux-musl

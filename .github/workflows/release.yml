@@ -22,7 +22,7 @@ jobs:
 
       - name: Build
         run: |
-          bash scripts/build.sh -an
+          bash scripts/build.sh -anT x86_64-linux-musl
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:

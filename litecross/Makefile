@@ -12,11 +12,12 @@ TOOLCHAIN_CONFIG =
 FULL_CC = 
 FULL_CXX = 
 FULL_FC = 
-COMMON_FLAGS = -static --static -Wno-error
+STATIC_FLAGS = -static --static
+COMMON_FLAGS = -Wno-error
 C_FLAGS = -g0 -Os
 CXX_FLAGS = -g0 -Os
 FC_FLAGS = -g0 -Os
-LD_FLAGS = -s
+LD_FLAGS = -s $(STATIC_FLAGS)
 
 XGCC_DIR = $(CURDIR)/obj_gcc/gcc
 XGCC = $(XGCC_DIR)/xgcc -B $(XGCC_DIR) -B $(CURDIR)/obj_sysroot/$(TARGET)/lib
@@ -171,6 +172,7 @@ BUILD = $(GUESS)$(if $(subst $(TARGET_CANON),,$(GUESS)),,xx)
 endif
 
 ifeq ($(NATIVE),)
+# cross build
 SYSROOT = /$(TARGET)
 ifeq ($(CC_COMPILER),)
 CC_PATH = gcc
@@ -189,8 +191,10 @@ else
 FC_PATH = $(FC_COMPILER)
 endif
 
+FULL_COMPILER_CONFIG = CC="$(CC_PATH) $(STATIC_FLAGS)" CXX="$(CXX_PATH) $(STATIC_FLAGS)" FC="$(FC_PATH) $(STATIC_FLAGS)"
+
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(BUILD) \
-	CC="$(CC_PATH)" CXX="$(CXX_PATH)" FC="$(FC_PATH)"
+	$(FULL_COMPILER_CONFIG)
 FULL_GCC_CONFIG += --with-build-sysroot=$(CURDIR)/obj_sysroot \
 	AR_FOR_TARGET=$(PWD)/obj_binutils/binutils/ar \
 	AS_FOR_TARGET=$(PWD)/obj_binutils/gas/as-new \
@@ -201,7 +205,7 @@ FULL_GCC_CONFIG += --with-build-sysroot=$(CURDIR)/obj_sysroot \
 	RANLIB_FOR_TARGET=$(PWD)/obj_binutils/binutils/ranlib \
 	READELF_FOR_TARGET=$(PWD)/obj_binutils/binutils/readelf \
 	STRIP_FOR_TARGET=$(PWD)/obj_binutils/binutils/strip-new \
-	CC="$(CC_PATH)" CXX="$(CXX_PATH)" FC="$(FC_PATH)" \
+	$(FULL_COMPILER_CONFIG) \
 	--build=$(BUILD) --host=$(BUILD)
 
 FULL_MUSL_CONFIG += CC="$(XGCC)" LIBCC="../obj_gcc/$(TARGET)/libgcc/libgcc.a" 
@@ -230,10 +234,12 @@ CC_PATH = $(TARGET)-gcc
 CXX_PATH = $(TARGET)-g++
 FC_PATH = $(TARGET)-gfortran
 
+FULL_COMPILER_CONFIG = CC="$(CC_PATH) $(STATIC_FLAGS)" CXX="$(CXX_PATH) $(STATIC_FLAGS)" FC="$(FC_PATH) $(STATIC_FLAGS)"
+
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(TARGET) \
-	CC="$(CC_PATH)" CXX="$(CXX_PATH)" FC="$(FC_PATH)"
+	$(FULL_COMPILER_CONFIG)
 FULL_GCC_CONFIG += --build=$(BUILD) --host=$(TARGET) \
-	CC="$(CC_PATH)" CXX="$(CXX_PATH)" FC="$(FC_PATH)"
+	$(FULL_COMPILER_CONFIG)
 
 MAKE += STMP_FIXINC=
 ifeq ($(findstring mingw,$(TARGET)),)

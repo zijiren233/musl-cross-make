@@ -13,6 +13,8 @@ jobs:
     name: Build Host
     runs-on: ${{ matrix.platform }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build temp
         run: |
           bash scripts/build.sh -nT \
@@ -45,6 +47,8 @@ jobs:
         with:
           name: x86_64-linux-musl-native
           path: /tmp
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         run: |
           bash scripts/build.sh -an \
@@ -75,6 +79,8 @@ jobs:
         with:
           name: x86_64-linux-musl-native
           path: /tmp
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         run: |
           bash scripts/build.sh -an \
@@ -112,6 +118,8 @@ jobs:
         with:
           name: x86_64-linux-musl-native
           path: /tmp
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         run: |
           bash scripts/build.sh -an \
@@ -145,6 +153,8 @@ jobs:
         with:
           name: x86_64-linux-musl-native
           path: /tmp
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         run: |
           bash scripts/build.sh -an \
@@ -187,6 +197,8 @@ jobs:
         with:
           name: x86_64-linux-musl-native
           path: /tmp
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         run: |
           bash scripts/build.sh -an \
@@ -222,6 +234,8 @@ jobs:
         with:
           name: x86_64-linux-musl-native
           path: /tmp
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         run: |
           bash scripts/build.sh -an \
@@ -252,6 +266,8 @@ jobs:
         with:
           name: x86_64-linux-musl-native
           path: /tmp
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         run: |
           bash scripts/build.sh -an \
@@ -282,6 +298,8 @@ jobs:
         with:
           name: x86_64-linux-musl-native
           path: /tmp
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         run: |
           bash scripts/build.sh -an \

@@ -18,6 +18,8 @@ jobs:
     name: Build Host
     runs-on: ${{ matrix.platform }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build temp
         run: |
           bash scripts/build.sh -nT \
@@ -43,12 +45,15 @@ jobs:
         platform: [ubuntu-latest]
     name: Build aarch64
     runs-on: ${{ matrix.platform }}
+    needs: build_host
     steps:
       - name: Download native
         uses: actions/download-artifact@v4
         with:
           name: x86_64-linux-musl-native
           path: /tmp
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         run: |
           bash scripts/build.sh -nt
@@ -63,12 +68,15 @@ jobs:
         platform: [ubuntu-latest]
     name: Build arm
     runs-on: ${{ matrix.platform }}
+    needs: build_host
     steps:
       - name: Download native
         uses: actions/download-artifact@v4
         with:
           name: x86_64-linux-musl-native
           path: /tmp
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         run: |
           bash scripts/build.sh -nt
@@ -90,12 +98,15 @@ jobs:
         platform: [ubuntu-latest]
     name: Build x86
     runs-on: ${{ matrix.platform }}
+    needs: build_host
     steps:
       - name: Download native
         uses: actions/download-artifact@v4
         with:
           name: x86_64-linux-musl-native
           path: /tmp
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         run: |
           bash scripts/build.sh -nt
@@ -113,12 +124,15 @@ jobs:
         platform: [ubuntu-latest]
     name: Build mips
     runs-on: ${{ matrix.platform }}
+    needs: build_host
     steps:
       - name: Download native
         uses: actions/download-artifact@v4
         with:
           name: x86_64-linux-musl-native
           path: /tmp
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         run: |
           bash scripts/build.sh -nt
@@ -145,12 +159,15 @@ jobs:
         platform: [ubuntu-latest]
     name: Build powerpc
     runs-on: ${{ matrix.platform }}
+    needs: build_host
     steps:
       - name: Download native
         uses: actions/download-artifact@v4
         with:
           name: x86_64-linux-musl-native
           path: /tmp
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         run: |
           bash scripts/build.sh -nt
@@ -170,12 +187,15 @@ jobs:
         platform: [ubuntu-latest]
     name: Build riscv
     runs-on: ${{ matrix.platform }}
+    needs: build_host
     steps:
       - name: Download native
         uses: actions/download-artifact@v4
         with:
           name: x86_64-linux-musl-native
           path: /tmp
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         run: |
           bash scripts/build.sh -nt
@@ -190,12 +210,15 @@ jobs:
         platform: [ubuntu-latest]
     name: Build s390x
     runs-on: ${{ matrix.platform }}
+    needs: build_host
     steps:
       - name: Download native
         uses: actions/download-artifact@v4
         with:
           name: x86_64-linux-musl-native
           path: /tmp
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         run: |
           bash scripts/build.sh -nt
@@ -210,12 +233,15 @@ jobs:
         platform: [ubuntu-latest]
     name: Build mingw
     runs-on: ${{ matrix.platform }}
+    needs: build_host
     steps:
       - name: Download native
         uses: actions/download-artifact@v4
         with:
           name: x86_64-linux-musl-native
           path: /tmp
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Build
         run: |
           bash scripts/build.sh -nt

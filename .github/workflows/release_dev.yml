@@ -10,6 +10,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Get all targets
+        id: get_all_targets
+        run: |
+          declare -a arr=()
+          while IFS= read -r line; do arr+=("$line"); done < scripts/triples.txt
+          printf -v json '"%s",' "${arr[@]}"
+          json="[${json%,}]"
+          echo "TARGETS=$json" >> $GITHUB_OUTPUT
+
       - name: Build
         run: |
           bash scripts/build.sh \
@@ -17,200 +27,40 @@ jobs:
             -O2 \
             -T \
             x86_64-linux-musl
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: x86_64-linux-musl-native
           path: dist/x86_64-linux-musl-native
 
-  build_job_1:
-    name: Build Job 1
+  build_targets:
+    name: Build Targets
     runs-on: ubuntu-latest
     needs: build_host
+    strategy:
+      max-parallel: 8
+      matrix:
+        targets: ${{ jobs.build_host.outputs.TARGETS }}
     steps:
       - name: Download native
         uses: actions/download-artifact@v4
         with:
           name: x86_64-linux-musl-native
           path: /tmp/x86_64-linux-musl-native
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build
-        run: |
-          chmod -R 0755 /tmp/x86_64-linux-musl-native
-          TARGETS="$(sed -n '1,10p' scripts/triples.txt)"
-          echo "$TARGETS"
-          bash scripts/build.sh \
-            -an \
-            -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
-            -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
-            -T \
-            "$TARGETS"
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          draft: false
-          prerelease: true
-          append_body: false
-          fail_on_unmatched_files: true
-          files: |
-            dist/*
 
-  build_job_2:
-    name: Build Job 2
-    runs-on: ubuntu-latest
-    needs: build_host
-    steps:
-      - name: Download native
-        uses: actions/download-artifact@v4
-        with:
-          name: x86_64-linux-musl-native
-          path: /tmp/x86_64-linux-musl-native
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Build
-        run: |
-          chmod -R 0755 /tmp/x86_64-linux-musl-native
-          TARGETS="$(sed -n '11,20p' scripts/triples.txt)"
-          echo "$TARGETS"
-          bash scripts/build.sh \
-            -an \
-            -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
-            -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
-            -T \
-            "$TARGETS"
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          draft: false
-          prerelease: true
-          append_body: false
-          fail_on_unmatched_files: true
-          files: |
-            dist/*
 
-  build_job_3:
-    name: Build Job 3
-    runs-on: ubuntu-latest
-    needs: build_host
-    steps:
-      - name: Download native
-        uses: actions/download-artifact@v4
-        with:
-          name: x86_64-linux-musl-native
-          path: /tmp/x86_64-linux-musl-native
-      - name: Checkout
-        uses: actions/checkout@v4
       - name: Build
         run: |
           chmod -R 0755 /tmp/x86_64-linux-musl-native
-          TARGETS="$(sed -n '21,30p' scripts/triples.txt)"
-          echo "$TARGETS"
           bash scripts/build.sh \
-            -an \
+            -nt \
             -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
             -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
-            -T \
-            "$TARGETS"
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          draft: false
-          prerelease: true
-          append_body: false
-          fail_on_unmatched_files: true
-          files: |
-            dist/*
+            -T "${{ matrix.targets }}"
 
-  build_job_4:
-    name: Build Job 4
-    runs-on: ubuntu-latest
-    needs: build_host
-    steps:
-      - name: Download native
-        uses: actions/download-artifact@v4
-        with:
-          name: x86_64-linux-musl-native
-          path: /tmp/x86_64-linux-musl-native
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build
-        run: |
-          chmod -R 0755 /tmp/x86_64-linux-musl-native
-          TARGETS="$(sed -n '31,40p' scripts/triples.txt)"
-          echo "$TARGETS"
-          bash scripts/build.sh \
-            -an \
-            -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
-            -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
-            -T \
-            "$TARGETS"
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          draft: false
-          prerelease: true
-          append_body: false
-          fail_on_unmatched_files: true
-          files: |
-            dist/*
-
-  build_job_5:
-    name: Build Job 5
-    runs-on: ubuntu-latest
-    needs: build_host
-    steps:
-      - name: Download native
-        uses: actions/download-artifact@v4
-        with:
-          name: x86_64-linux-musl-native
-          path: /tmp/x86_64-linux-musl-native
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build
-        run: |
-          chmod -R 0755 /tmp/x86_64-linux-musl-native
-          TARGETS="$(sed -n '41,50p' scripts/triples.txt)"
-          echo "$TARGETS"
-          bash scripts/build.sh \
-            -an \
-            -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
-            -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
-            -T \
-            "$TARGETS"
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          draft: false
-          prerelease: true
-          append_body: false
-          fail_on_unmatched_files: true
-          files: |
-            dist/*
-
-  build_job_6:
-    name: Build Job 6
-    runs-on: ubuntu-latest
-    needs: build_host
-    steps:
-      - name: Download native
-        uses: actions/download-artifact@v4
-        with:
-          name: x86_64-linux-musl-native
-          path: /tmp/x86_64-linux-musl-native
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build
-        run: |
-          chmod -R 0755 /tmp/x86_64-linux-musl-native
-          TARGETS="$(sed -n '51,60p' scripts/triples.txt)"
-          echo "$TARGETS"
-          bash scripts/build.sh \
-            -an \
-            -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
-            -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
-            -T \
-            "$TARGETS"
       - name: Release
         uses: softprops/action-gh-release@v1
         with:

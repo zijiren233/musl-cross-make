@@ -26,9 +26,11 @@ mipsel-linux-muslsf
 mipsel-linux-musln32sf
 mips64-linux-musl
 mips64-linux-musln32
+mips64-linux-muslsf
 mips64-linux-musln32sf
 mips64el-linux-musl
 mips64el-linux-musln32
+mips64el-linux-muslsf
 mips64el-linux-musln32sf
 or1k-linux-musl
 powerpc-linux-musl

@@ -248,7 +248,7 @@ EOF
     fi
 
     for line in $TARGETS; do
-        if [ ! "$line" ] || [ -z "$line" ] || [ "${line:0:1}" == "#" ]; then
+        if [ -z "$line" ] || [ "${line:0:1}" == "#" ]; then
             continue
         fi
         Build "$line"

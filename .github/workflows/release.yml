@@ -19,7 +19,12 @@ jobs:
         id: get_all_targets
         run: |
           declare -a arr=()
-          while IFS= read -r line; do arr+=("$line"); done < scripts/triples.txt
+          while IFS= read -r line; do
+          if [ -z "$line" ]; then
+            continue
+          fi
+          arr+=("$line")
+          done < scripts/triples.txt
           printf -v json '"%s",' "${arr[@]}"
           json="[${json%,}]"
           echo "TARGETS=$json" >> $GITHUB_OUTPUT
@@ -57,9 +62,6 @@ jobs:
 
       - name: Build
         run: |
-          if [ -z "${{ matrix.targets }}" ]; then
-            exit 0
-          fi
           chmod -R 0755 /tmp/x86_64-linux-musl-native
           bash scripts/build.sh \
             -an \

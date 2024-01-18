@@ -91,4 +91,10 @@ jobs:
           append_body: false
           fail_on_unmatched_files: true
           files: |
-            dist/*
+            dist/*.tgz
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.targets }} logs
+          path: dist/*.log

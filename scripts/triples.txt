@@ -16,8 +16,6 @@ armv7r-linux-musleabihf
 i486-linux-musl
 i686-linux-musl
 m68k-linux-musl
-microblaze-linux-musl
-microblazeel-linux-musl
 mips-linux-musl
 mips-linux-musln32
 mips-linux-muslsf
@@ -42,9 +40,7 @@ powerpc64le-linux-musl
 riscv64-linux-musl
 s390x-linux-musl
 sh2-linux-musl
-sh2-linux-muslfdpic
 sh2eb-linux-musl
-sh2eb-linux-muslfdpic
 sh4-linux-musl
 sh4eb-linux-musl
 x86_64-linux-musl

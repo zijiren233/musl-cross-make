@@ -86,6 +86,7 @@ endif
 
 ifeq ($(findstring riscv64,$(TARGET)),)
 # not riscv64
+# if `read-only segment has dynamic relocations` error occurs, try deleting `--disable-shared` option.
 COMMON_CONFIG += --disable-shared
 endif
 

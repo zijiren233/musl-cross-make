@@ -34,6 +34,13 @@ jobs:
           json="[${json%,}]"
           echo "TARGETS=$json" >> $GITHUB_OUTPUT
 
+      - name: Cache sources
+        id: cache-sources
+        uses: actions/cache@v4
+        with:
+            path: sources
+            key: sources
+
       - name: Build
         run: |
           bash scripts/build.sh \
@@ -65,6 +72,13 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Cache sources
+        id: cache-sources
+        uses: actions/cache@v4
+        with:
+            path: sources
+            key: sources
 
       - name: Build
         run: |

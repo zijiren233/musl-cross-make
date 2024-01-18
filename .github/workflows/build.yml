@@ -63,6 +63,9 @@ jobs:
 
       - name: Build
         run: |
+          if [ -z "${{ matrix.targets }}" ]; then
+            exit 0
+          fi
           chmod -R 0755 /tmp/x86_64-linux-musl-native
           bash scripts/build.sh \
             -nt \

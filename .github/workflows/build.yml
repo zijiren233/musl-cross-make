@@ -84,7 +84,7 @@ jobs:
         run: |
           chmod -R 0755 /tmp/x86_64-linux-musl-native
           bash scripts/build.sh \
-            -nt \
+            -ntO0 \
             -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
             -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
             -T "${{ matrix.targets }}"

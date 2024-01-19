@@ -214,7 +214,7 @@ BINUTILS_VER = 2.41
 GMP_VER = 6.3.0
 MPC_VER = 1.3.1
 MPFR_VER = 4.2.1
-ISL_VER = 
+ISL_VER = 0.26
 LINUX_VER = 4.19.274
 MINGW_VER = v11.0.1
 
@@ -229,7 +229,8 @@ GCC_CONFIG += --disable-libquadmath --disable-decimal-float
 GCC_CONFIG += --disable-libitm
 GCC_CONFIG += --disable-fixed-point
 GCC_CONFIG += --disable-lto
-BINUTILS_CONFIG += --enable-compressed-debug-sections=none
+BINUTILS_CONFIG += --enable-compressed-debug-sections=none \
+    --enable-gold=yes
 EOF
     if [ "$TARGETS_FILE" ]; then
         if [ -f "$TARGETS_FILE" ]; then

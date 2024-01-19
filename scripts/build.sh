@@ -210,7 +210,15 @@ function BuildAll() {
 CONFIG_SUB_REV = 28ea239c53a2
 GCC_VER = 13.2.0
 MUSL_VER = 1.2.4
+
+ifneq (\$(findstring or1k,\$(TARGET)),)
+# or1k
+# in binutils 2.41, ld exit with code 11
+BINUTILS_VER = 2.37
+else
 BINUTILS_VER = 2.41
+endif
+
 GMP_VER = 6.3.0
 MPC_VER = 1.3.1
 MPFR_VER = 4.2.1

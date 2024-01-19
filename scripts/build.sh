@@ -32,10 +32,11 @@ function Help() {
     echo "-n: with native build"
     echo "-L: log to std"
     echo "-O: set optimize level"
+    echo "-j: set job number"
 }
 
 function ParseArgs() {
-    while getopts "hatT:Cc:x:f:nLO:" arg; do
+    while getopts "hatT:Cc:x:f:nLO:j:" arg; do
         case $arg in
         h)
             Help
@@ -70,6 +71,14 @@ function ParseArgs() {
             ;;
         O)
             OPTIMIZE_LEVEL="$OPTARG"
+            ;;
+        j)
+            if [ "$OPTARG" -eq "$OPTARG" ] 2>/dev/null; then
+                CPU_NUM="$OPTARG"
+            else
+                echo "cpu number must be number"
+                exit 1
+            fi
             ;;
         ?)
             echo "unkonw argument"
@@ -111,6 +120,8 @@ function Build() {
         TARGET="${TARGET}" \
         OUTPUT="${DIST_NAME}" \
         NATIVE="" \
+        CPUS="${CPU_NUM}" \
+        OPTIMIZE_LEVEL="${OPTIMIZE_LEVEL}" \
         install >"${LOG_FILE}" 2>&1
     if [ $? -ne 0 ]; then
         if [ ! "$LOG_TO_STD" ]; then
@@ -132,6 +143,8 @@ function Build() {
             TARGET="${TARGET}" \
             OUTPUT="${NATIVE_DIST_NAME}" \
             NATIVE="true" \
+            CPUS="${CPU_NUM}" \
+            OPTIMIZE_LEVEL="${OPTIMIZE_LEVEL}" \
             install >"${NATIVE_LOG_FILE}" 2>&1
         if [ $? -ne 0 ]; then
             if [ ! "$LOG_TO_STD" ]; then
@@ -208,7 +221,14 @@ x86_64-w64-mingw32'
 function BuildAll() {
     cat >config.mak <<EOF
 CONFIG_SUB_REV = 28ea239c53a2
+
+ifneq (\$(findstring 86-w64-mingw,\$(TARGET)),)
+# i486-w64-mingw32 i686-w64-mingw32
+GCC_VER = 11.4.0
+else
 GCC_VER = 13.2.0
+endif
+
 MUSL_VER = 1.2.4
 
 ifneq (\$(findstring or1k,\$(TARGET)),)
@@ -223,6 +243,7 @@ GMP_VER = 6.3.0
 MPC_VER = 1.3.1
 MPFR_VER = 4.2.1
 ISL_VER = 0.26
+
 LINUX_VER = 4.19.274
 MINGW_VER = v11.0.1
 
@@ -230,15 +251,13 @@ CC_COMPILER = ${CC}
 CXX_COMPILER = ${CXX}
 FC_COMPILER = ${FC}
 CHINA = ${USE_CHINA_MIRROR}
-OPTIMIZE_LEVEL = ${OPTIMIZE_LEVEL}
 
 COMMON_CONFIG += --disable-nls
 GCC_CONFIG += --disable-libquadmath --disable-decimal-float
 GCC_CONFIG += --disable-libitm
 GCC_CONFIG += --disable-fixed-point
 GCC_CONFIG += --disable-lto
-BINUTILS_CONFIG += --enable-compressed-debug-sections=none \
-    --enable-gold=yes
+BINUTILS_CONFIG += --enable-compressed-debug-sections=none
 EOF
     if [ "$TARGETS_FILE" ]; then
         if [ -f "$TARGETS_FILE" ]; then

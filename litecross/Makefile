@@ -146,6 +146,9 @@ COMMON_CONFIG += --disable-werror \
 	--enable-deterministic-archives \
 	CFLAGS="$(FULL_C_FLAGS)" CXXFLAGS="$(FULL_CXX_FLAGS)" FFLAGS="$(FULL_FC_FLAGS)" LDFLAGS="$(FULL_LD_FLAGS)"
 
+# `--disable-gprofng` fix gprofng: unknown type name off64_t in `binutils version 2.38+`
+BINUTILS_CONFIG += --disable-gprofng
+
 GCC_CONFIG += --enable-libquadmath --enable-libquadmath-support \
 	--enable-tls \
 	--disable-libmudflap --disable-libsanitizer \

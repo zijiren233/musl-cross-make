@@ -208,9 +208,9 @@ x86_64-w64-mingw32'
 function BuildAll() {
     cat >config.mak <<EOF
 CONFIG_SUB_REV = 28ea239c53a2
-GCC_VER = 11.4.0
+GCC_VER = 13.2.0
 MUSL_VER = 1.2.4
-BINUTILS_VER = 2.37
+BINUTILS_VER = 2.41
 GMP_VER = 6.3.0
 MPC_VER = 1.3.1
 MPFR_VER = 4.2.1

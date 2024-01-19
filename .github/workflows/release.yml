@@ -39,7 +39,7 @@ jobs:
       - name: Build
         run: |
           bash scripts/build.sh \
-            -n \
+            -nL \
             -O2 \
             -T \
             x86_64-linux-musl
@@ -78,7 +78,7 @@ jobs:
         run: |
           chmod -R 0755 /tmp/x86_64-linux-musl-native
           bash scripts/build.sh \
-            -an \
+            -anL \
             -c "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-gcc" \
             -x "/tmp/x86_64-linux-musl-native/bin/x86_64-linux-musl-g++" \
             -T "${{ matrix.targets }}"
@@ -92,9 +92,3 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             dist/*.tgz
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.targets }} logs
-          path: dist/*.log

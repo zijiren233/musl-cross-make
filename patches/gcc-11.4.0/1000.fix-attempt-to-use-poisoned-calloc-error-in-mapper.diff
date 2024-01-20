@@ -1,0 +1,34 @@
+diff --git a/gcc/cp/mapper-client.cc b/gcc/cp/mapper-client.cc
+--- a/gcc/cp/mapper-client.cc
++++ b/gcc/cp/mapper-client.cc
+@@ -27,6 +27,7 @@
+ #define INCLUDE_STRING
+ #define INCLUDE_VECTOR
+ #define INCLUDE_MAP
++#include <pthread.h>
+ #include "system.h"
+ 
+ #include "line-map.h"
+
+diff --git a/gcc/cp/mapper-resolver.cc b/gcc/cp/mapper-resolver.cc
+--- a/gcc/cp/mapper-resolver.cc
++++ b/gcc/cp/mapper-resolver.cc
+@@ -25,6 +25,7 @@
+ #define INCLUDE_VECTOR
+ #define INCLUDE_ALGORITHM
+ #define INCLUDE_MAP
++#include <pthread.h>
+ #include "system.h"
+ 
+ // We don't want or need to be aware of networking
+
+diff --git a/gcc/cp/module.cc b/gcc/cp/module.cc
+--- a/gcc/cp/module.cc
++++ b/gcc/cp/module.cc
+@@ -205,5 +205,6 @@
+ #define INCLUDE_STRING
+ #define INCLUDE_VECTOR
++#include <pthread.h>
+ #include "system.h"
+ #include "coretypes.h"
+ #include "cp-tree.h"

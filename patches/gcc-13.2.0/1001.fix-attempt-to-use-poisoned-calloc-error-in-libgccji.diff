@@ -1,0 +1,35 @@
+diff --git a/gcc/jit/jit-playback.cc b/gcc/jit/jit-playback.cc
+--- a/gcc/jit/jit-playback.cc
++++ b/gcc/jit/jit-playback.cc
+@@ -19,6 +19,7 @@
+ <http://www.gnu.org/licenses/>.  */
+ 
++#include <pthread.h>
+ #include "config.h"
+ #define INCLUDE_MUTEX
+ #include "system.h"
+ #include "coretypes.h"
+
+diff --git a/gcc/jit/jit-recording.cc b/gcc/jit/jit-recording.cc
+--- a/gcc/jit/jit-recording.cc
++++ b/gcc/jit/jit-recording.cc
+@@ -19,6 +19,7 @@
+ <http://www.gnu.org/licenses/>.  */
+ 
++#include <pthread.h>
+ #include "config.h"
+ #include "system.h"
+ #include "coretypes.h"
+ #include "tm.h"
+
+diff --git a/gcc/jit/libgccjit.cc b/gcc/jit/libgccjit.cc
+--- a/gcc/jit/libgccjit.cc
++++ b/gcc/jit/libgccjit.cc
+@@ -19,6 +19,7 @@
+ <http://www.gnu.org/licenses/>.  */
+ 
++#include <pthread.h>
+ #include "config.h"
+ #define INCLUDE_MUTEX
+ #include "system.h"
+ #include "coretypes.h"

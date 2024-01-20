@@ -1,0 +1,96 @@
+diff --git a/gcc/config/i386/i386.md b/gcc/config/i386/i386.md
+index f3a3305..a71e837 100644
+--- a/gcc/config/i386/i386.md
++++ b/gcc/config/i386/i386.md
+@@ -14359,7 +14359,10 @@
+     emit_insn (gen_ix86_<insn>ti3_doubleword
+ 		(operands[0], operands[1], operands[2]));
+   else if (CONST_INT_P (operands[2]) && INTVAL (operands[2]) == 64)
+-    emit_insn (gen_<insn>64ti2_doubleword (operands[0], operands[1]));
++    {
++      operands[1] = force_reg (TImode, operands[1]);
++      emit_insn (gen_<insn>64ti2_doubleword (operands[0], operands[1]));
++    }
+   else
+     {
+       rtx amount = force_reg (QImode, operands[2]);
+@@ -14394,7 +14397,10 @@
+     emit_insn (gen_ix86_<insn>di3_doubleword
+ 		(operands[0], operands[1], operands[2]));
+   else if (CONST_INT_P (operands[2]) && INTVAL (operands[2]) == 32)
+-    emit_insn (gen_<insn>32di2_doubleword (operands[0], operands[1]));
++    {
++      operands[1] = force_reg (DImode, operands[1]);
++      emit_insn (gen_<insn>32di2_doubleword (operands[0], operands[1]));
++    }
+   else
+     FAIL;
+ 
+@@ -14562,8 +14568,8 @@
+ })
+ 
+ (define_insn_and_split "<insn>32di2_doubleword"
+- [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+-       (any_rotate:DI (match_operand:DI 1 "nonimmediate_operand" "0,r,o")
++ [(set (match_operand:DI 0 "register_operand" "=r,r")
++       (any_rotate:DI (match_operand:DI 1 "register_operand" "0,r")
+                       (const_int 32)))]
+  "!TARGET_64BIT"
+  "#"
+@@ -14580,8 +14586,8 @@
+ })
+ 
+ (define_insn_and_split "<insn>64ti2_doubleword"
+- [(set (match_operand:TI 0 "register_operand" "=r,r,r")
+-       (any_rotate:TI (match_operand:TI 1 "nonimmediate_operand" "0,r,o")
++ [(set (match_operand:TI 0 "register_operand" "=r,r")
++       (any_rotate:TI (match_operand:TI 1 "register_operand" "0,r")
+                       (const_int 64)))]
+  "TARGET_64BIT"
+  "#"
+diff --git a/gcc/testsuite/g++.target/i386/pr110792.C b/gcc/testsuite/g++.target/i386/pr110792.C
+new file mode 100644
+index 0000000..ce21a7a
+--- /dev/null
++++ b/gcc/testsuite/g++.target/i386/pr110792.C
+@@ -0,0 +1,16 @@
++/* { dg-do compile { target ia32 } } */
++/* { dg-options "-O2" } */
++
++template <int ROT, typename T>
++inline T rotr(T input)
++{
++   return static_cast<T>((input >> ROT) | (input << (8 * sizeof(T) - ROT)));
++}
++
++unsigned long long WHIRL_S[256] = {0x18186018C07830D8};
++unsigned long long whirl(unsigned char x0)
++{
++   const unsigned long long s4 = WHIRL_S[x0&0xFF];
++   return rotr<32>(s4);
++}
++/* { dg-final { scan-assembler-not "movl\tWHIRL_S\\+4\\(,%eax,8\\), %eax" } } */
+diff --git a/gcc/testsuite/gcc.target/i386/pr110792.c b/gcc/testsuite/gcc.target/i386/pr110792.c
+new file mode 100644
+index 0000000..b65125c
+--- /dev/null
++++ b/gcc/testsuite/gcc.target/i386/pr110792.c
+@@ -0,0 +1,18 @@
++/* { dg-do compile { target int128 } } */
++/* { dg-options "-O2" } */
++
++static inline unsigned __int128 rotr(unsigned __int128 input)
++{
++   return ((input >> 64) | (input << (64)));
++}
++
++unsigned __int128 WHIRL_S[256] = {((__int128)0x18186018C07830D8) << 64 |0x18186018C07830D8};
++unsigned __int128 whirl(unsigned char x0)
++{
++   register int t __asm("rdi") = x0&0xFF;
++   const unsigned __int128 s4 = WHIRL_S[t];
++   register unsigned __int128 tt  __asm("rdi") = rotr(s4);
++   asm("":::"memory");
++   return tt;
++}
++/* { dg-final { scan-assembler-not "movq\tWHIRL_S\\+8\\(%rdi\\), %rdi" } } */

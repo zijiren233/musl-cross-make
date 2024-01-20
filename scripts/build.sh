@@ -163,17 +163,21 @@ function Build() {
         rm -rf "${DIST_NAME}" "${NATIVE_DIST_NAME}"
     else
         if [ "$ENABLE_ARCHIVE" ]; then
-            tar -zcvf "${DIST_NAME}.tgz" -C "${DIST_NAME}" .
+            tar -zcf "${DIST_NAME}.tgz" -C "${DIST_NAME}" .
             if [ $? -ne 0 ]; then
-                echo "package ${DIST_NAME} error"
+                echo "package ${DIST_NAME} to ${DIST_NAME}.tgz error"
                 exit 1
+            else
+                echo "package ${DIST_NAME} to ${DIST_NAME}.tgz success"
             fi
 
             if [ "$NATIVE_BUILD" ]; then
-                tar -zcvf "${NATIVE_DIST_NAME}.tgz" -C "${NATIVE_DIST_NAME}" .
+                tar -zcf "${NATIVE_DIST_NAME}.tgz" -C "${NATIVE_DIST_NAME}" .
                 if [ $? -ne 0 ]; then
-                    echo "package ${NATIVE_DIST_NAME} error"
+                    echo "package ${NATIVE_DIST_NAME} to ${NATIVE_DIST_NAME}.tgz error"
                     exit 1
+                else
+                    echo "package ${NATIVE_DIST_NAME} to ${NATIVE_DIST_NAME}.tgz success"
                 fi
             fi
             rm -rf "${DIST_NAME}" "${NATIVE_DIST_NAME}"

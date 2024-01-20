@@ -51,7 +51,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: x86_64-linux-musl-native
+          name: tmp x86_64-linux-musl-native
           path: dist/x86_64-linux-musl-native
 
   build_targets:
@@ -65,7 +65,7 @@ jobs:
       - name: Download native
         uses: actions/download-artifact@v4
         with:
-          name: x86_64-linux-musl-native
+          name: tmp x86_64-linux-musl-native
           path: /tmp/x86_64-linux-musl-native
 
       - name: Checkout

@@ -1,0 +1,14 @@
+diff --git a/include/elf.h b/include/elf.h
+index 23f2c4bc..aa186d9d 100644
+--- a/include/elf.h
++++ b/include/elf.h
+@@ -32,6 +32,9 @@ typedef uint16_t Elf64_Section;
+ typedef Elf32_Half Elf32_Versym;
+ typedef Elf64_Half Elf64_Versym;
+ 
++typedef Elf32_Word Elf32_Relr;
++typedef Elf64_Xword Elf64_Relr;
++
+ #define EI_NIDENT (16)
+ 
+ typedef struct {

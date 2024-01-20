@@ -1,0 +1,14 @@
+diff --git a/include/string.h b/include/string.h
+index db73d2a9..83e2b946 100644
+--- a/include/string.h
++++ b/include/string.h
+@@ -95,9 +95,6 @@ char *strchrnul(const char *, int);
+ char *strcasestr(const char *, const char *);
+ void *memrchr(const void *, int, size_t);
+ void *mempcpy(void *, const void *, size_t);
+-#ifndef __cplusplus
+-char *basename();
+-#endif
+ #endif
+ 
+ #ifdef __cplusplus

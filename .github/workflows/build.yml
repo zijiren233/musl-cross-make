@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       TARGETS: ${{ steps.get_all_targets.outputs.TARGETS }}
+      CACHE_KEY: ${{ steps.gen_cache_key.outputs.CACHE_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,12 +35,17 @@ jobs:
           json="[${json%,}]"
           echo "TARGETS=$json" >> $GITHUB_OUTPUT
 
+      - name: Generate cache key
+        id: gen_cache_key
+        run: |
+          echo "CACHE_KEY=$(sha1sum Makefile | cut -d ' ' -f 1)$(sha1sum scripts/build.sh | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
+
       - name: Cache sources
         id: cache-sources
         uses: actions/cache@v4
         with:
             path: sources
-            key: sources
+            key: ${{ steps.gen_cache_key.outputs.CACHE_KEY }}
 
       - name: Build
         run: |
@@ -78,7 +84,7 @@ jobs:
         uses: actions/cache@v4
         with:
             path: sources
-            key: sources
+            key: ${{ needs.build_host.outputs.CACHE_KEY }}
 
       - name: Build
         run: |

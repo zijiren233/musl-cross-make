@@ -119,6 +119,7 @@ function Build() {
     make \
         TARGET="${TARGET}" \
         OUTPUT="${DIST_NAME}" \
+        CHINA="${USE_CHINA_MIRROR}" \
         NATIVE="" \
         CPUS="${CPU_NUM}" \
         OPTIMIZE_LEVEL="${OPTIMIZE_LEVEL}" \
@@ -142,6 +143,7 @@ function Build() {
             make \
             TARGET="${TARGET}" \
             OUTPUT="${NATIVE_DIST_NAME}" \
+            CHINA="${USE_CHINA_MIRROR}" \
             NATIVE="true" \
             CPUS="${CPU_NUM}" \
             OPTIMIZE_LEVEL="${OPTIMIZE_LEVEL}" \
@@ -221,14 +223,7 @@ x86_64-w64-mingw32'
 function BuildAll() {
     cat >config.mak <<EOF
 CONFIG_SUB_REV = 28ea239c53a2
-
-ifneq (\$(findstring 86-w64-mingw,\$(TARGET)),)
-# i486-w64-mingw32 i686-w64-mingw32
-GCC_VER = 11.4.0
-else
 GCC_VER = 13.2.0
-endif
-
 MUSL_VER = 1.2.4
 
 ifneq (\$(findstring or1k,\$(TARGET)),)
@@ -250,13 +245,19 @@ MINGW_VER = v11.0.1
 CC_COMPILER = ${CC}
 CXX_COMPILER = ${CXX}
 FC_COMPILER = ${FC}
-CHINA = ${USE_CHINA_MIRROR}
 
 COMMON_CONFIG += --disable-nls
 GCC_CONFIG += --disable-libquadmath --disable-decimal-float
 GCC_CONFIG += --disable-libitm
 GCC_CONFIG += --disable-fixed-point
 GCC_CONFIG += --disable-lto
+
+ifneq (\$(findstring 86-w64-mingw32,\$(TARGET)),)
+# i486-w64-mingw32 i686-w64-mingw32
+# disable tls in gcc 13.2.0
+GCC_CONFIG += --disable-tls
+endif
+
 BINUTILS_CONFIG += --enable-compressed-debug-sections=none
 EOF
     if [ "$TARGETS_FILE" ]; then

@@ -33,19 +33,21 @@ DLLTOOL = $(CURDIR)/obj_binutils/binutils/dlltool
 -include config.mak
 
 ifeq ($(OPTIMIZE_LEVEL),)
-C_FLAGS += -Os
-CXX_FLAGS += -Os
-FC_FLAGS += -Os
+C_FLAGS := -Os $(C_FLAGS)
+CXX_FLAGS := -Os $(CXX_FLAGS)
+FC_FLAGS := -Os $(FC_FLAGS)
 else
-C_FLAGS = -O$(OPTIMIZE_LEVEL)
-CXX_FLAGS = -O$(OPTIMIZE_LEVEL)
-FC_FLAGS = -O$(OPTIMIZE_LEVEL)
+C_FLAGS := -O$(OPTIMIZE_LEVEL) $(C_FLAGS)
+CXX_FLAGS := -O$(OPTIMIZE_LEVEL) $(CXX_FLAGS)
+FC_FLAGS := -O$(OPTIMIZE_LEVEL) $(FC_FLAGS)
 endif
 
 ifeq ($(CPUS),)
-MAKE_ARGS += -j$(shell if command -v nproc >/dev/null 2>&1; then nproc; else echo 1; fi)
+MAKE_ARGS := -j$(shell if command -v nproc >/dev/null 2>&1; then nproc; else echo 1; fi) \
+	$(MAKE_ARGS)
 else
-MAKE_ARGS += -j$(CPUS)
+MAKE_ARGS := -j$(CPUS) \
+	$(MAKE_ARGS)
 endif
 
 ifneq ($(findstring musl,$(TARGET)),)
@@ -65,11 +67,11 @@ ifneq ($(filter x86_64%x32,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-abi=x32
 endif
 
-ifneq ($(findstring microblaze,$(TARGET)),)
+# ifneq ($(findstring microblaze,$(TARGET)),)
 # ICE in GCC; temporarily disable gfortran support.
 # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=87438
-GCC_CONFIG_FOR_TARGET += --enable-languages=c,c++
-endif
+# GCC_CONFIG_FOR_TARGET += --enable-languages=c,c++
+# endif
 
 ifneq ($(findstring powerpc64,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-abi=elfv2 --with-cpu=970
@@ -87,11 +89,11 @@ ifneq ($(findstring s390x,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-long-double-128
 endif
 
-ifeq ($(findstring riscv64,$(TARGET)),)
+# ifeq ($(findstring riscv64,$(TARGET)),)
 # not riscv64
 # if `read-only segment has dynamic relocations` error occurs, try deleting `--disable-shared` option.
-COMMON_CONFIG += --disable-shared
-endif
+# COMMON_CONFIG += --disable-shared
+# endif
 
 ifneq ($(filter %sf,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-float=soft
@@ -142,30 +144,33 @@ FULL_CXX_FLAGS = $(COMMON_FLAGS) $(CXX_FLAGS)
 FULL_FC_FLAGS = $(COMMON_FLAGS) $(FC_FLAGS)
 FULL_LD_FLAGS = $(COMMON_FLAGS) $(LD_FLAGS)
 
-COMMON_CONFIG += --disable-werror \
+COMMON_CONFIG := --disable-werror \
 	--target=$(TARGET) --prefix= \
 	--with-sysroot=$(SYSROOT) \
 	--libdir=/lib --disable-multilib --disable-multiarch \
 	--enable-deterministic-archives \
-	CFLAGS="$(FULL_C_FLAGS)" CXXFLAGS="$(FULL_CXX_FLAGS)" FFLAGS="$(FULL_FC_FLAGS)" LDFLAGS="$(FULL_LD_FLAGS)"
+	CFLAGS="$(FULL_C_FLAGS)" CXXFLAGS="$(FULL_CXX_FLAGS)" FFLAGS="$(FULL_FC_FLAGS)" LDFLAGS="$(FULL_LD_FLAGS)" \
+	$(COMMON_CONFIG)
 
 # `--disable-gprofng` fix gprofng: unknown type name off64_t in `binutils version 2.38+`
-BINUTILS_CONFIG += --disable-gprofng
+BINUTILS_CONFIG := --disable-gprofng \
+	$(BINUTILS_CONFIG)
 
-GCC_CONFIG += --enable-libquadmath --enable-libquadmath-support \
+GCC_CONFIG := --enable-libquadmath --enable-libquadmath-support \
 	--enable-tls \
 	--disable-libmudflap --disable-libsanitizer \
 	--disable-gnu-indirect-function \
 	--disable-libmpx \
 	--disable-assembly \
 	--enable-libstdcxx-time \
-	--enable-default-pie --enable-static-pie --disable-cet
+	--enable-default-pie --enable-static-pie --disable-cet \
+	$(GCC_CONFIG)
 
 FULL_BINUTILS_CONFIG = \
 	--disable-separate-code \
 	$(COMMON_CONFIG) $(BINUTILS_CONFIG) $(TOOLCHAIN_CONFIG)
 
-FULL_GCC_CONFIG = --enable-languages=c,c++,fortran \
+FULL_GCC_CONFIG = --enable-languages=c,c++ \
 	$(GCC_CONFIG_FOR_TARGET) \
 	$(COMMON_CONFIG) $(GCC_CONFIG) $(TOOLCHAIN_CONFIG) \
     $(OVERRIDE)
@@ -264,8 +269,6 @@ ifeq ($(findstring mingw,$(TARGET)),)
 # musl
 FULL_BINUTILS_CONFIG += --with-native-system-header-dir=/include
 FULL_GCC_CONFIG += --with-native-system-header-dir=/include
-FULL_MUSL_CONFIG += --enable-static \
-	--disable-shared
 MUSL_VARS = 
 else
 # mingw

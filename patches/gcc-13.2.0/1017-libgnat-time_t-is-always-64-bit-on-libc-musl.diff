@@ -2,7 +2,7 @@ diff --git a/gcc/ada/libgnat/s-parame.ads b/gcc/ada/libgnat/s-parame.ads
 index 3d6e345a1ba..cfe0b4d3ca6 100644
 --- a/gcc/ada/libgnat/s-parame.ads
 +++ b/gcc/ada/libgnat/s-parame.ads
-@@ -102,7 +102,7 @@ package System.Parameters is
+@@ -102,6 +102,6 @@ package System.Parameters is
     -- Characteristics of time_t type --
     ------------------------------------
  

@@ -15,6 +15,7 @@ armv7m-linux-musleabi
 armv7r-linux-musleabihf
 i486-linux-musl
 i686-linux-musl
+loongarch64-linux-musl
 m68k-linux-musl
 mips-linux-musl
 mips-linux-musln32

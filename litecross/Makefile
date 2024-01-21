@@ -90,9 +90,10 @@ GCC_CONFIG_FOR_TARGET += --with-long-double-128
 endif
 
 # ifeq ($(findstring riscv64,$(TARGET)),)
-# not riscv64
+# enable shared in riscv64 gcc 11.4.0
 # if `read-only segment has dynamic relocations` error occurs, try deleting `--disable-shared` option.
-# COMMON_CONFIG += --disable-shared
+COMMON_CONFIG := --disable-shared \
+	$(COMMON_CONFIG)
 # endif
 
 ifneq ($(filter %sf,$(TARGET)),)

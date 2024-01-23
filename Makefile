@@ -92,6 +92,8 @@ check:
 	@which bison
 	@echo "check rsync"
 	@which rsync
+	@echo "check sha1sum"
+	@which sha1sum
 
 # Rules for downloading and verifying sources. Treat an external SOURCES path as
 # immutable and do not try to download anything into it.

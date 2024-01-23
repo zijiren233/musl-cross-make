@@ -19,7 +19,7 @@ OPTIMIZE_LEVEL =
 C_FLAGS = -g0
 CXX_FLAGS = -g0
 FC_FLAGS = -g0
-LD_FLAGS = -s $(STATIC_FLAGS)
+LD_FLAGS = -s
 
 XGCC_DIR = $(CURDIR)/obj_gcc/gcc
 XGCC = $(XGCC_DIR)/xgcc -B $(XGCC_DIR) -B $(CURDIR)/obj_sysroot/$(TARGET)/lib
@@ -32,6 +32,23 @@ DLLTOOL = $(CURDIR)/obj_binutils/binutils/dlltool
 
 -include config.mak
 
+ifeq ($(NATIVE),)
+# cross
+ifneq ($(DISABLE_CROSS_STATIC_BUILD),)
+STATIC_FLAGS = 
+endif
+else
+# native
+ifneq ($(DISABLE_NATIVE_STATIC_BUILD),)
+STATIC_FLAGS = 
+endif
+endif
+
+C_FLAGS := $(STATIC_FLAGS) $(C_FLAGS)
+CXX_FLAGS := $(STATIC_FLAGS) $(CXX_FLAGS)
+FC_FLAGS := $(STATIC_FLAGS) $(FC_FLAGS)
+LD_FLAGS := $(STATIC_FLAGS) $(LD_FLAGS)
+
 ifeq ($(OPTIMIZE_LEVEL),)
 C_FLAGS := -Os $(C_FLAGS)
 CXX_FLAGS := -Os $(CXX_FLAGS)
@@ -43,7 +60,7 @@ FC_FLAGS := -O$(OPTIMIZE_LEVEL) $(FC_FLAGS)
 endif
 
 ifeq ($(CPUS),)
-MAKE_ARGS := -j$(shell if command -v nproc >/dev/null 2>&1; then nproc; else echo 1; fi) \
+MAKE_ARGS := -j$(shell if command -v nproc >/dev/null 2>&1; then nproc; else echo 2; fi) \
 	$(MAKE_ARGS)
 else
 MAKE_ARGS := -j$(CPUS) \
@@ -98,10 +115,10 @@ COMMON_CONFIG := --disable-shared \
 
 ifneq ($(filter %sf,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-float=soft
-endif
-
+else
 ifneq ($(filter %hf,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-float=hard
+endif
 endif
 
 ifneq ($(findstring mingw,$(TARGET)),)
@@ -124,10 +141,14 @@ GCC_CONFIG_FOR_TARGET += --disable-bootstrap \
 # # https://wiki.musl-libc.org/getting-started.html#Notes_on_ARM_Float_Mode
 # ifneq ($(findstring armv5,$(TARGET)),)
 # GCC_CONFIG_FOR_TARGET += --with-arch=armv5te --with-fpu=vfp
-# else ifneq ($(findstring armv6,$(TARGET)),)
+# else
+# ifneq ($(findstring armv6,$(TARGET)),)
 # GCC_CONFIG_FOR_TARGET += --with-arch=armv6 --with-fpu=vfpv2
-# else ifneq ($(findstring armv7,$(TARGET)),)
+# else
+# ifneq ($(findstring armv7,$(TARGET)),)
 # GCC_CONFIG_FOR_TARGET += --with-arch=armv7-a --with-fpu=vfpv3
+# endif
+# endif
 # endif
 endif
 
@@ -150,8 +171,10 @@ COMMON_CONFIG := --disable-werror \
 	--with-sysroot=$(SYSROOT) \
 	--libdir=/lib --disable-multilib --disable-multiarch \
 	--enable-deterministic-archives \
-	CFLAGS="$(FULL_C_FLAGS)" CXXFLAGS="$(FULL_CXX_FLAGS)" FFLAGS="$(FULL_FC_FLAGS)" LDFLAGS="$(FULL_LD_FLAGS)" \
+	LDFLAGS="$(FULL_LD_FLAGS)" \
 	$(COMMON_CONFIG)
+
+# CFLAGS="$(FULL_C_FLAGS)" CXXFLAGS="$(FULL_CXX_FLAGS)" FFLAGS="$(FULL_FC_FLAGS)" LDFLAGS="$(FULL_LD_FLAGS)" \
 
 # `--disable-gprofng` fix gprofng: unknown type name off64_t in `binutils version 2.38+`
 BINUTILS_CONFIG := --disable-gprofng \
@@ -215,10 +238,10 @@ else
 FC_PATH = $(FC_COMPILER)
 endif
 
-FULL_COMPILER_CONFIG = CC="$(CC_PATH) $(STATIC_FLAGS)" CXX="$(CXX_PATH) $(STATIC_FLAGS)" FC="$(FC_PATH) $(STATIC_FLAGS)"
-
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(BUILD) \
-	$(FULL_COMPILER_CONFIG)
+	CC="$(CC_PATH) $(FULL_C_FLAGS) $(BINUTILS_C_FLAGS)" \
+	CXX="$(CXX_PATH) $(FULL_CXX_FLAGS) $(BINUTILS_CXX_FLAGS)" \
+	FC="$(FC_PATH) $(FULL_FC_FLAGS) $(BINUTILS_FC_FLAGS)"
 FULL_GCC_CONFIG += --with-build-sysroot=$(CURDIR)/obj_sysroot \
 	AR_FOR_TARGET=$(PWD)/obj_binutils/binutils/ar \
 	AS_FOR_TARGET=$(PWD)/obj_binutils/gas/as-new \
@@ -229,7 +252,9 @@ FULL_GCC_CONFIG += --with-build-sysroot=$(CURDIR)/obj_sysroot \
 	RANLIB_FOR_TARGET=$(PWD)/obj_binutils/binutils/ranlib \
 	READELF_FOR_TARGET=$(PWD)/obj_binutils/binutils/readelf \
 	STRIP_FOR_TARGET=$(PWD)/obj_binutils/binutils/strip-new \
-	$(FULL_COMPILER_CONFIG) \
+	CC="$(CC_PATH) $(FULL_C_FLAGS) $(GCC_C_FLAGS)" \
+	CXX="$(CXX_PATH) $(FULL_CXX_FLAGS) $(GCC_CXX_FLAGS)" \
+	FC="$(FC_PATH) $(FULL_FC_FLAGS) $(GCC_FC_FLAGS)" \
 	--build=$(BUILD) --host=$(BUILD)
 
 FULL_MUSL_CONFIG += CC="$(XGCC)" LIBCC="../obj_gcc/$(TARGET)/libgcc/libgcc.a" 
@@ -258,12 +283,14 @@ CC_PATH = $(TARGET)-gcc
 CXX_PATH = $(TARGET)-g++
 FC_PATH = $(TARGET)-gfortran
 
-FULL_COMPILER_CONFIG = CC="$(CC_PATH) $(STATIC_FLAGS)" CXX="$(CXX_PATH) $(STATIC_FLAGS)" FC="$(FC_PATH) $(STATIC_FLAGS)"
-
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(TARGET) \
-	$(FULL_COMPILER_CONFIG)
+	CC="$(CC_PATH) $(FULL_C_FLAGS) $(BINUTILS_C_FLAGS)" \
+	CXX="$(CXX_PATH) $(FULL_CXX_FLAGS) $(BINUTILS_CXX_FLAGS)" \
+	FC="$(FC_PATH) $(FULL_FC_FLAGS) $(BINUTILS_FC_FLAGS)"
 FULL_GCC_CONFIG += --build=$(BUILD) --host=$(TARGET) \
-	$(FULL_COMPILER_CONFIG)
+	CC="$(CC_PATH) $(FULL_C_FLAGS) $(GCC_C_FLAGS)" \
+	CXX="$(CXX_PATH) $(FULL_CXX_FLAGS) $(GCC_CXX_FLAGS)" \
+	FC="$(FC_PATH) $(FULL_FC_FLAGS) $(GCC_FC_FLAGS)"
 
 MAKE += STMP_FIXINC=
 ifeq ($(findstring mingw,$(TARGET)),)

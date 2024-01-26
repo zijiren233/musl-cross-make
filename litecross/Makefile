@@ -167,10 +167,11 @@ MAKE += ac_cv_prog_lex_root=lex.yy
 MAKE += MAKEINFO=false
 
 COMMON_CONFIG := --target=$(TARGET) --prefix= \
-	--with-sysroot=$(SYSROOT) \
-	--disable-bootstrap \
-	--libdir=/lib --disable-multilib \
+	--with-sysroot=$(SYSROOT) --libdir=/lib \
 	--disable-werror \
+	--disable-shared --disable-multilib \
+	--without-zstd \
+	--disable-bootstrap \
 	--enable-deterministic-archives \
 	--disable-nls \
 	--enable-gold --enable-lto \
@@ -181,7 +182,7 @@ GCC_CONFIG := --enable-languages=c,c++ \
 	--disable-gnu-indirect-function \
 	--disable-libmpx \
 	--enable-libstdcxx-time \
-	--enable-default-pie --enable-static-pie --enable-cet \
+	--enable-default-pie --enable-static-pie \
 	--disable-decimal-float \
 	$(GCC_CONFIG)
 
@@ -232,8 +233,10 @@ FULL_GCC_CONFIG += --build=$(BUILD) --host=$(BUILD) \
 	READELF_FOR_TARGET=$(CURDIR)/obj_binutils/binutils/readelf \
 	STRIP_FOR_TARGET=$(CURDIR)/obj_binutils/binutils/strip-new
 
-FULL_MUSL_CONFIG += CC="$(XGCC)" LIBCC="../obj_gcc/$(TARGET)/libgcc/libgcc.a" 
-MUSL_VARS = AR=../obj_binutils/binutils/ar RANLIB=../obj_binutils/binutils/ranlib
+FULL_MUSL_CONFIG += CC="$(XGCC)" \
+	LIBCC="../obj_gcc/$(TARGET)/libgcc/libgcc.a"
+MUSL_VARS = AR="../obj_binutils/binutils/ar" \
+	RANLIB="../obj_binutils/binutils/ranlib"
 MINGW_VARS = AS="$(XAS)" AR="$(XAR)" CC="$(XGCC)" RANLIB="$(XRANLIB)"
 FULL_MINGW_PTHREADS_CONFIG += RC="$(XRC)" CC="$(XGCC)" CPP="$(XCPP)" \
 	CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include" \

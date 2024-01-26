@@ -1,0 +1,10 @@
+diff -git a/Makefile b/Makefile
+--- a/Makefile
++++ b/Makefile
+@@ -1197,5 +1197,5 @@
+ PHONY += __headers
+-__headers: $(version_h) scripts_basic uapi-asm-generic archheaders archscripts
++__headers: $(version_h) scripts_basic uapi-asm-generic archheaders
+ 	$(Q)$(MAKE) $(build)=scripts build_unifdef
+ 
+ PHONY += headers_install_all

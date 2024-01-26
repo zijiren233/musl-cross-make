@@ -67,11 +67,7 @@
 
 # Options you can add for faster/simpler build at the expense of features:
 
-# COMMON_CONFIG += --disable-nls
-# GCC_CONFIG += --disable-libquadmath --disable-decimal-float
-# GCC_CONFIG += --disable-libitm
-# GCC_CONFIG += --disable-fixed-point
-# GCC_CONFIG += --disable-lto
+# SIMPLER_BUILD = true
 
 # By default C and C++ are the only languages enabled, and these are
 # the only ones tested and known to be supported. You can uncomment the
@@ -79,9 +75,6 @@
 # work too.
 
 # GCC_CONFIG += --enable-languages=c,c++
-
-# recommend: disable building lib32 crt when building 64-bit compiler
-# MINGW_CRT_CONFIG += --disable-lib32 --enable-lib64 --disable-libarm32
 
 # if you'd like your toolchain to target the Universal CRT instead of MSVCRT,
 # uncomment the following lines

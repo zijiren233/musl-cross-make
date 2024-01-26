@@ -13,6 +13,82 @@ function Init() {
     OIFS="$IFS"
     IFS=$'\n\t, '
 
+    if [ "$(uname)" == "Darwin" ]; then
+        MAKE="gmake"
+        TMP_BIN_DIR="$(mktemp -d)"
+        PATH="$TMP_BIN_DIR:$PATH"
+        trap "rm -rf \"$TMP_BIN_DIR\"" EXIT
+
+        if [ -x "$(command -v gsed)" ]; then
+            SED_PATH="$(command -v gsed)"
+            ln -s "$SED_PATH" "$TMP_BIN_DIR/sed"
+        else
+            echo "Warn: gsed not found"
+            echo "Warn: when sed is not gnu version, it may cause build error"
+            echo "Warn: you can install gsed with brew"
+            echo "Warn: brew install gnu-sed"
+            sleep 3
+        fi
+
+        if [ -x "$(command -v glibtool)" ]; then
+            LIBTOOL_PATH="$(command -v glibtool)"
+            ln -s "$LIBTOOL_PATH" "$TMP_BIN_DIR/libtool"
+        else
+            echo "Warn: glibtool not found"
+            echo "Warn: when libtool is not gnu version, it may cause build error"
+            echo "Warn: you can install libtool with brew"
+            echo "Warn: brew install libtool"
+            sleep 3
+        fi
+
+        if [ -x "$(command -v greadlink)" ]; then
+            READLINK_PATH="$(command -v greadlink)"
+            ln -s "$READLINK_PATH" "$TMP_BIN_DIR/readlink"
+        else
+            echo "Warn: greadlink not found"
+            echo "Warn: when readlink is not gnu version, it may cause build error"
+            echo "Warn: you can install coreutils with brew"
+            echo "Warn: brew install coreutils"
+            sleep 3
+        fi
+
+        if [ -x "$(command -v gfind)" ]; then
+            FIND_PATH="$(command -v gfind)"
+            ln -s "$FIND_PATH" "$TMP_BIN_DIR/find"
+        else
+            echo "Warn: gfind not found"
+            echo "Warn: when find is not gnu version, it may cause build error"
+            echo "Warn: you can install findutils with brew"
+            echo "Warn: brew install findutils"
+            sleep 3
+        fi
+
+        if [ -x "$(command -v gawk)" ]; then
+            AWK_PATH="$(command -v gawk)"
+            ln -s "$AWK_PATH" "$TMP_BIN_DIR/awk"
+        else
+            echo "Warn: gawk not found"
+            echo "Warn: when awk is not gnu version, it may cause build error"
+            echo "Warn: you can install gawk with brew"
+            echo "Warn: brew install gawk"
+            sleep 3
+        fi
+
+        if [ -x "$(command -v gdate)" ]; then
+            DATE_PATH="$(command -v gdate)"
+            ln -s "$DATE_PATH" "$TMP_BIN_DIR/date"
+        else
+            echo "Warn: gdate not found"
+            echo "Warn: when date is not gnu version, it may cause build error"
+            echo "Warn: you can install coreutils with brew"
+            echo "Warn: brew install coreutils"
+            sleep 3
+        fi
+
+    else
+        MAKE="make"
+    fi
+
     {
         DEFAULT_CONFIG_SUB_REV="28ea239c53a2"
         DEFAULT_GCC_VER="13.2.0"
@@ -65,7 +141,6 @@ function Help() {
     echo "-C: use china mirror"
     echo "-c: set CC"
     echo "-x: set CXX"
-    echo "-f: set FC"
     echo "-n: with native build"
     echo "-N: only native build"
     echo "-L: log to std"
@@ -75,26 +150,27 @@ function Help() {
     echo "-s: disable cross static build"
     echo "-S: disable native static build"
     echo "-p: dist name prefix"
+    echo "-i: simpler build"
 }
 
 function ParseArgs() {
-    while getopts "hatT:Cc:x:f:nLlO:j:sSNp:" arg; do
+    while getopts "hatT:Cc:x:nLlO:j:sSNp:i" arg; do
         case $arg in
         h)
             Help
             exit 0
             ;;
         a)
-            ENABLE_ARCHIVE="1"
+            ENABLE_ARCHIVE="true"
             ;;
         t)
-            TEST_BUILD_ONLY="1"
+            TEST_BUILD_ONLY="true"
             ;;
         T)
             TARGETS_FILE="$OPTARG"
             ;;
         C)
-            USE_CHINA_MIRROR="1"
+            USE_CHINA_MIRROR="true"
             ;;
         c)
             CC="$OPTARG"
@@ -102,21 +178,18 @@ function ParseArgs() {
         x)
             CXX="$OPTARG"
             ;;
-        f)
-            FC="$OPTARG"
-            ;;
         n)
-            NATIVE_BUILD="1"
+            NATIVE_BUILD="true"
             ;;
         N)
-            NATIVE_BUILD="1"
-            ONLY_NATIVE_BUILD="1"
+            NATIVE_BUILD="true"
+            ONLY_NATIVE_BUILD="true"
             ;;
         L)
-            LOG_TO_STD="1"
+            LOG_TO_STD="true"
             ;;
         l)
-            DISABLE_LOG_TO_FILE="1"
+            DISABLE_LOG_TO_FILE="true"
             ;;
         O)
             OPTIMIZE_LEVEL="$OPTARG"
@@ -130,13 +203,16 @@ function ParseArgs() {
             fi
             ;;
         s)
-            DISABLE_CROSS_STATIC_BUILD="1"
+            DISABLE_CROSS_STATIC_BUILD="true"
             ;;
         S)
-            DISABLE_NATIVE_STATIC_BUILD="1"
+            DISABLE_NATIVE_STATIC_BUILD="true"
             ;;
         p)
             DIST_NAME_PREFIX="$OPTARG"
+            ;;
+        i)
+            SIMPLER_BUILD="true"
             ;;
         ?)
             echo "unkonw argument"
@@ -169,6 +245,9 @@ ifneq (\$(findstring or1k,\$(TARGET)),)
 # or1k
 # in binutils 2.41, ld exit with code 11
 BINUTILS_VER = 2.37
+else
+# \`--disable-gprofng\` fix gprofng: unknown type name off64_t in \`binutils version 2.38+\`
+BINUTILS_CONFIG += --disable-gprofng
 endif
 
 GMP_VER = ${GMP_VER}
@@ -179,9 +258,12 @@ ISL_VER = ${ISL_VER}
 LINUX_VER = ${LINUX_VER}
 MINGW_VER = ${MINGW_VER}
 
-CC_COMPILER = ${CC}
-CXX_COMPILER = ${CXX}
-FC_COMPILER = ${FC}
+# only work in cross build
+# native build will find ${TARGET}-gcc ${TARGET}-g++ in env to build
+ifneq (${CC}${CXX},)
+CC = ${CC}
+CXX = ${CXX}
+endif
 
 CHINA = ${USE_CHINA_MIRROR}
 CPUS = ${CPU_NUM}
@@ -189,11 +271,12 @@ OPTIMIZE_LEVEL = ${OPTIMIZE_LEVEL}
 DISABLE_CROSS_STATIC_BUILD = ${DISABLE_CROSS_STATIC_BUILD}
 DISABLE_NATIVE_STATIC_BUILD = ${DISABLE_NATIVE_STATIC_BUILD}
 
-COMMON_CONFIG += --disable-nls
-GCC_CONFIG += --disable-libquadmath --disable-decimal-float
-GCC_CONFIG += --disable-libitm
-GCC_CONFIG += --disable-fixed-point
-GCC_CONFIG += --disable-lto
+SIMPLER_BUILD = ${SIMPLER_BUILD}
+
+ifeq (\$(shell uname),Darwin)
+# fix isl 0.25+ isl_test_cpp17 error
+CXX += -std=gnu++17
+endif
 
 ifneq (\$(findstring 86-w64-mingw32,\$(TARGET)),)
 # i486-w64-mingw32 i686-w64-mingw32
@@ -201,8 +284,7 @@ ifneq (\$(findstring 86-w64-mingw32,\$(TARGET)),)
 GCC_CONFIG += --disable-tls
 endif
 
-COMMON_CONFIG += --with-debug-prefix-map=$(pwd)=
-BINUTILS_CONFIG += --enable-compressed-debug-sections=none
+COMMON_CONFIG += --with-debug-prefix-map=\$(CURDIR)= --enable-compressed-debug-sections=none
 EOF
 }
 
@@ -217,7 +299,7 @@ function Build() {
     if [ ! "$ONLY_NATIVE_BUILD" ]; then
         echo "build cross ${DIST_NAME_PREFIX}${TARGET} to ${CROSS_DIST_NAME}"
         rm -rf "${CROSS_DIST_NAME}" "${CROSS_LOG_FILE}"
-        make clean
+        $MAKE clean
         {
             OUTPUT="${CROSS_DIST_NAME}"
             NATIVE=""
@@ -233,7 +315,7 @@ function Build() {
             fi
         done < <(
             set +e
-            make install 2>&1
+            $MAKE install 2>&1
             echo $? >"${CROSS_DIST_NAME}.exit"
         )
         read EXIT_CODE <"${CROSS_DIST_NAME}.exit"
@@ -253,7 +335,7 @@ function Build() {
     if [ "$NATIVE_BUILD" ]; then
         echo "build native ${DIST_NAME_PREFIX}${TARGET} to ${NATIVE_DIST_NAME}"
         rm -rf "${NATIVE_DIST_NAME}" "${NATIVE_LOG_FILE}"
-        make clean
+        $MAKE clean
         {
             OUTPUT="${NATIVE_DIST_NAME}"
             NATIVE="true"
@@ -270,7 +352,7 @@ function Build() {
         done < <(
             set +e
             PATH="${CROSS_DIST_NAME}/bin:${PATH}" \
-                make install 2>&1
+                $MAKE install 2>&1
             echo $? >"${NATIVE_DIST_NAME}.exit"
         )
         read EXIT_CODE <"${NATIVE_DIST_NAME}.exit"

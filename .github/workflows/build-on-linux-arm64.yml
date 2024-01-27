@@ -68,6 +68,14 @@ jobs:
           dockerRunArgs: |
             --volume "${PWD}:/build"
           shell: /bin/bash
+          install: |
+            apt update && apt upgrade -y
+            apt install -y \
+                coreutils \
+                curl \
+                make \
+                bison \
+                rsync
           run: |
             echo ::set-output name=MACHINE::$(uname -m)
             cd /build

@@ -138,6 +138,15 @@ jobs:
           name: sources
           path: sources
 
+      - name: Init Dependencies
+        run: |
+          brew install llvm
+          brew install make
+          brew install gnu-sed
+          brew install gawk
+          brew install coreutils
+          brew install findutils
+
       - name: Build
         run: |
           bash scripts/build.sh \

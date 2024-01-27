@@ -170,7 +170,6 @@ COMMON_CONFIG := --target=$(TARGET) --prefix= \
 	--with-sysroot=$(SYSROOT) --libdir=/lib \
 	--disable-werror \
 	--disable-multilib \
-	--without-zstd \
 	--disable-bootstrap \
 	--enable-deterministic-archives \
 	--disable-nls \

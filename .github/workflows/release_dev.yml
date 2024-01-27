@@ -40,7 +40,7 @@ jobs:
   build_linux_amd64_host:
     name: Build Linux amd64 Host
     runs-on: ubuntu-latest
-    needs: 
+    needs:
       - init
     steps:
       - name: Checkout
@@ -69,7 +69,7 @@ jobs:
   build_targets_on_linux_amd64:
     name: Build Targets on Linux amd64
     runs-on: ubuntu-latest
-    needs: 
+    needs:
       - init
       - build_linux_amd64_host
     strategy:
@@ -115,7 +115,7 @@ jobs:
   build_targets_on_macos_amd64:
     name: Build Targets on macOS amd64
     runs-on: macos-latest
-    needs: 
+    needs:
       - init
     strategy:
       matrix:

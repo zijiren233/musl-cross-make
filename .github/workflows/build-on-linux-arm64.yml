@@ -1,0 +1,88 @@
+name: build-on-linux-arm64
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  init:
+    name: Init
+    runs-on: ubuntu-latest
+    outputs:
+      TARGETS: ${{ steps.get_all_targets.outputs.TARGETS }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get all targets
+        id: get_all_targets
+        run: |
+          declare -a arr=()
+          while IFS= read -r line; do
+          if [ -z "$line" ] || [ "${line:0:1}" == "#" ]; then
+            continue
+          fi
+          arr+=("$line")
+          done < scripts/triples.txt
+          printf -v json '"%s",' "${arr[@]}"
+          json="[${json%,}]"
+          echo "TARGETS=$json" >> $GITHUB_OUTPUT
+
+      - name: Init sources
+        run: |
+          make extract_all
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sources
+          path: sources
+
+  build_targets_on_linux_arm64:
+    name: Build Targets on Linux arm64
+    runs-on: ubuntu-latest
+    needs:
+      - init
+    strategy:
+      matrix:
+        targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: sources
+          path: sources
+
+      - uses: uraimo/run-on-arch-action@v2
+        name: Build artifact
+        id: build
+        with:
+          arch: aarch64
+          distro: ubuntu_latest
+          githubToken: ${{ github.token }}
+          dockerRunArgs: |
+            --volume "${PWD}:/build"
+          shell: /bin/sh
+          run: |
+            echo "MACHINE=$(uname -m)" >> $GITHUB_OUTPUT
+            cd /build
+            bash scripts/build.sh \
+                -nL \
+                -T "${{ matrix.targets }}"
+
+      - name: Upload ${{ matrix.targets }} cross
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.targets }}-cross-linux-${{ steps.build.outputs.MACHINE }}
+          path: dist/${{ matrix.targets }}-cross
+
+      - name: Upload ${{ matrix.targets }} native
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.targets }}-native-linux-${{ steps.build.outputs.MACHINE }}
+          path: dist/${{ matrix.targets }}-native

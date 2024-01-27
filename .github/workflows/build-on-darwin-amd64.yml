@@ -1,7 +1,14 @@
-name: release_dev
+name: build-on-darwin-amd64
 
 on:
-  workflow_dispatch:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   init:
@@ -34,39 +41,6 @@ jobs:
         with:
           name: sources
           path: sources
-
-  build_targets_on_linux_amd64:
-    name: Build Targets on Linux amd64
-    runs-on: ubuntu-latest
-    needs:
-      - init
-    strategy:
-      matrix:
-        targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: sources
-          path: sources
-
-      - name: Build
-        run: |
-          bash scripts/build.sh \
-            -anL \
-            -T "${{ matrix.targets }}"
-
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: dev-linux-amd64
-          draft: false
-          prerelease: true
-          append_body: false
-          fail_on_unmatched_files: true
-          files: |
-            dist/*.tgz
 
   build_targets_on_macos_amd64:
     name: Build Targets on macOS amd64
@@ -101,21 +75,23 @@ jobs:
       - name: Build
         run: |
           bash scripts/build.sh \
-            -asL \
+            -sL \
             -c "llvm-gcc" \
             -x "llvm-g++" \
             -T "${{ matrix.targets }}"
 
-      - id: get_machine
+      - name: Get machine
+        id: get_machine
         run: echo "MACHINE=$(uname -m)" >> $GITHUB_OUTPUT
 
-      - name: Release
-        uses: softprops/action-gh-release@v1
+      - name: Upload ${{ matrix.targets }} cross
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: dev-darwin-${{ steps.get_machine.outputs.MACHINE }}
-          draft: false
-          prerelease: true
-          append_body: false
-          fail_on_unmatched_files: true
-          files: |
-            dist/*.tgz
+          name: ${{ matrix.targets }}-cross-darwin-${{ steps.get_machine.outputs.MACHINE }}
+          path: dist/${{ matrix.targets }}-cross
+
+      - name: Upload ${{ matrix.targets }} native
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.targets }}-native-darwin-${{ steps.get_machine.outputs.MACHINE }}
+          path: dist/${{ matrix.targets }}-native

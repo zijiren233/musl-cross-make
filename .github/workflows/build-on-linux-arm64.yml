@@ -77,7 +77,10 @@ jobs:
                 xz-utils \
                 make \
                 bison \
-                rsync
+                rsync \
+                patch \
+                gcc \
+                g++
           run: |
             echo ::set-output name=MACHINE::$(uname -m)
             cd /build

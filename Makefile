@@ -84,6 +84,8 @@ distclean: clean
 check:
 	@echo "check bzip2"
 	@which bzip2
+	@echo "check xz"
+	@which xz
 	@echo "check gcc"
 	@which gcc
 	@echo "check g++"

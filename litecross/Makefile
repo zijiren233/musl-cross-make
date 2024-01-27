@@ -177,7 +177,7 @@ COMMON_CONFIG := --target=$(TARGET) --prefix= \
 	--disable-bootstrap \
 	--enable-deterministic-archives \
 	--disable-nls \
-	--enable-gold --enable-lto \
+	--enable-lto \
 	$(COMMON_CONFIG)
 
 GCC_CONFIG := --enable-languages=c,c++ \
@@ -190,8 +190,9 @@ GCC_CONFIG := --enable-languages=c,c++ \
 	$(GCC_CONFIG)
 
 ifneq ($(SIMPLER_BUILD),)
-COMMON_CONFIG += --disable-libquadmath --disable-libquadmath-support \
-	--disable-gold --disable-lto
+COMMON_CONFIG += --disable-libquadmath \
+	--disable-libquadmath-support \
+	--disable-lto
 endif
 
 FULL_BINUTILS_CONFIG = $(COMMON_CONFIG) $(BINUTILS_CONFIG) $(TOOLCHAIN_CONFIG)

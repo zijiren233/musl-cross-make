@@ -43,7 +43,7 @@ jobs:
           path: sources
 
   build_targets_on_linux_amd64:
-    name: Build Targets on Linux amd64
+    name: Build
     runs-on: ubuntu-latest
     needs:
       - init
@@ -64,17 +64,14 @@ jobs:
             -nL \
             -T "${{ matrix.targets }}"
 
-      - id: get_machine
-        run: echo "MACHINE=$(uname -m)" >> $GITHUB_OUTPUT
-
       - name: Upload ${{ matrix.targets }} cross
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.targets }}-cross-linux-${{ steps.get_machine.outputs.MACHINE }}
+          name: ${{ matrix.targets }}-cross-linux-amd64
           path: dist/${{ matrix.targets }}-cross
 
       - name: Upload ${{ matrix.targets }} native
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.targets }}-native-linux-${{ steps.get_machine.outputs.MACHINE }}
+          name: ${{ matrix.targets }}-native-linux-amd64
           path: dist/${{ matrix.targets }}-native

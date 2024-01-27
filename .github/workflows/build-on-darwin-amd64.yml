@@ -43,7 +43,7 @@ jobs:
           path: sources
 
   build_targets_on_macos_amd64:
-    name: Build Targets on macOS amd64
+    name: Build
     runs-on: macos-13
     needs:
       - init
@@ -80,18 +80,14 @@ jobs:
             -x "llvm-g++" \
             -T "${{ matrix.targets }}"
 
-      - name: Get machine
-        id: get_machine
-        run: echo "MACHINE=$(uname -m)" >> $GITHUB_OUTPUT
-
       - name: Upload ${{ matrix.targets }} cross
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.targets }}-cross-darwin-${{ steps.get_machine.outputs.MACHINE }}
+          name: ${{ matrix.targets }}-cross-darwin-amd64
           path: dist/${{ matrix.targets }}-cross
 
       - name: Upload ${{ matrix.targets }} native
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.targets }}-native-darwin-${{ steps.get_machine.outputs.MACHINE }}
+          name: ${{ matrix.targets }}-native-darwin-amd64
           path: dist/${{ matrix.targets }}-native

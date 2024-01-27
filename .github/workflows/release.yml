@@ -129,6 +129,11 @@ jobs:
     strategy:
       matrix:
         targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
+        exclude:
+          - targets:
+            - i486-w64-mingw32
+            - i686-w64-mingw32
+            - x86_64-w64-mingw32
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -81,7 +81,8 @@ jobs:
       - name: Build
         run: |
           chmod -R 0755 /tmp/x86_64-linux-musl-native
-          PATH="/tmp/x86_64-linux-musl-native/bin:$PATH" bash scripts/build.sh \
+          export PATH=/tmp/x86_64-linux-musl-native/bin:$PATH
+          bash scripts/build.sh \
             -anL \
             -c "x86_64-linux-musl-gcc" \
             -x "x86_64-linux-musl-g++" \

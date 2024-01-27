@@ -67,9 +67,9 @@ jobs:
           githubToken: ${{ github.token }}
           dockerRunArgs: |
             --volume "${PWD}:/build"
-          shell: /bin/sh
+          shell: /bin/bash
           run: |
-            echo "MACHINE=$(uname -m)" >> $GITHUB_OUTPUT
+            echo ::set-output name=MACHINE::$(uname -m)
             cd /build
             bash scripts/build.sh \
                 -nL \

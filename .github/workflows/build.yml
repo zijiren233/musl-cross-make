@@ -129,8 +129,8 @@ jobs:
       matrix:
         targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
         run-on:
+          - macos-latest-xlarge
           - macos-latest
-          - macos-arm64
         exclude:
           - targets:
             - i486-w64-mingw32

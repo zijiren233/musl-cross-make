@@ -103,7 +103,7 @@ jobs:
           chmod -R 0755 /tmp/x86_64-linux-musl-native
           export PATH=/tmp/x86_64-linux-musl-native/bin:$PATH
           bash scripts/build.sh \
-            -anL \
+            -nL \
             -c "x86_64-linux-musl-gcc" \
             -x "x86_64-linux-musl-g++" \
             -T "${{ matrix.targets }}"
@@ -150,7 +150,7 @@ jobs:
       - name: Build
         run: |
           bash scripts/build.sh \
-            -asL \
+            -sL \
             -c "llvm-gcc" \
             -x "llvm-g++" \
             -T "${{ matrix.targets }}"

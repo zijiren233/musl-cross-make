@@ -84,17 +84,17 @@ jobs:
           run: |
             cd /build
             sh scripts/build.sh \
-                -nL \
+                -nLO0 \
                 -T "${{ matrix.targets }}"
 
       - name: Upload ${{ matrix.targets }} cross
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.targets }}-cross-linux-armv7
+          name: ${{ matrix.targets }}-cross-linux-armv6
           path: dist/${{ matrix.targets }}-cross
 
       - name: Upload ${{ matrix.targets }} native
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.targets }}-native-linux-armv7
+          name: ${{ matrix.targets }}-native-linux-armv6
           path: dist/${{ matrix.targets }}-native

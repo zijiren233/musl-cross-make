@@ -75,7 +75,7 @@ jobs:
       - name: Build
         run: |
           bash scripts/build.sh \
-            -sL \
+            -sLO0 \
             -c "llvm-gcc" \
             -x "llvm-g++" \
             -T "${{ matrix.targets }}"

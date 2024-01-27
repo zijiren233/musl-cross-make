@@ -61,7 +61,7 @@ jobs:
       - name: Build
         run: |
           bash scripts/build.sh \
-            -nL \
+            -nLO0 \
             -T "${{ matrix.targets }}"
 
       - name: Upload ${{ matrix.targets }} cross

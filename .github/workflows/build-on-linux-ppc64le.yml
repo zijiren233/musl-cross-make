@@ -1,4 +1,4 @@
-name: build-on-linux-armv7
+name: build-on-linux-ppc64le
 
 on:
   push:
@@ -42,7 +42,7 @@ jobs:
           name: sources
           path: sources
 
-  build_targets_on_linux_armv7:
+  build_targets_on_linux_ppc64le:
     name: Build
     runs-on: ubuntu-latest
     needs:
@@ -62,7 +62,7 @@ jobs:
         name: Build
         id: build
         with:
-          arch: armv7
+          arch: ppc64le
           distro: alpine_latest
           githubToken: ${{ github.token }}
           dockerRunArgs: |
@@ -90,11 +90,11 @@ jobs:
       - name: Upload ${{ matrix.targets }} cross
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.targets }}-cross-linux-armv7
+          name: ${{ matrix.targets }}-cross-linux-ppc64le
           path: dist/${{ matrix.targets }}-cross
 
       - name: Upload ${{ matrix.targets }} native
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.targets }}-native-linux-armv7
+          name: ${{ matrix.targets }}-native-linux-ppc64le
           path: dist/${{ matrix.targets }}-native

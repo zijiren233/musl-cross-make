@@ -4,12 +4,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_host:
-    name: Build Host
+  init:
+    name: Init
     runs-on: ubuntu-latest
     outputs:
       TARGETS: ${{ steps.get_all_targets.outputs.TARGETS }}
-      CACHE_KEY: ${{ steps.gen_cache_key.outputs.CACHE_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,17 +27,30 @@ jobs:
           json="[${json%,}]"
           echo "TARGETS=$json" >> $GITHUB_OUTPUT
 
-      - name: Generate cache key
-        id: gen_cache_key
+      - name: Init sources
         run: |
-          echo "CACHE_KEY=$(sha1sum Makefile | cut -d ' ' -f 1)$(sha1sum scripts/build.sh | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
+          make extract_all
 
-      - name: Cache sources
-        id: cache-sources
-        uses: actions/cache@v4
+      - name: Upload sources
+        uses: actions/upload-artifact@v4
         with:
-            path: sources
-            key: ${{ steps.gen_cache_key.outputs.CACHE_KEY }}
+          name: sources
+          path: sources
+
+  build_linux_amd64_host:
+    name: Build Linux amd64 Host
+    runs-on: ubuntu-latest
+    needs: 
+      - init
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download sources
+        uses: actions/download-artifact@v4
+        with:
+          name: sources
+          path: sources
 
       - name: Build
         run: |
@@ -54,29 +66,30 @@ jobs:
           name: tmp x86_64-linux-musl-native
           path: dist/x86_64-linux-musl-native
 
-  build_targets:
-    name: Build Targets
+  build_targets_on_linux_amd64:
+    name: Build Targets on Linux amd64
     runs-on: ubuntu-latest
-    needs: build_host
+    needs: 
+      - init
+      - build_linux_amd64_host
     strategy:
       matrix:
-        targets: ${{ fromJSON(needs.build_host.outputs.TARGETS) }}
+        targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Download native
         uses: actions/download-artifact@v4
         with:
           name: tmp x86_64-linux-musl-native
           path: /tmp/x86_64-linux-musl-native
 
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Cache sources
-        id: cache-sources
-        uses: actions/cache@v4
+      - name: Download sources
+        uses: actions/download-artifact@v4
         with:
-            path: sources
-            key: ${{ needs.build_host.outputs.CACHE_KEY }}
+          name: sources
+          path: sources
 
       - name: Build
         run: |
@@ -91,6 +104,44 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: dev-linux-amd64
+          draft: false
+          prerelease: true
+          append_body: false
+          fail_on_unmatched_files: true
+          files: |
+            dist/*.tgz
+
+  build_targets_on_macos_amd64:
+    name: Build Targets on macOS amd64
+    runs-on: macos-latest
+    needs: 
+      - init
+    strategy:
+      matrix:
+        targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download sources
+        uses: actions/download-artifact@v4
+        with:
+          name: sources
+          path: sources
+
+      - name: Build
+        run: |
+          bash scripts/build.sh \
+            -asL \
+            -c "llvm-gcc" \
+            -x "llvm-g++" \
+            -T "${{ matrix.targets }}"
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: dev-macos-amd64
           draft: false
           prerelease: true
           append_body: false

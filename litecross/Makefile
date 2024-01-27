@@ -66,14 +66,15 @@ CXXFLAGS := $(strip $(COMMON_FLAGS) $(CXXFLAGS))
 
 ifeq ($(NATIVE),)
 # cross build
-COMPILER_ARGS += CC="$(CC)" CXX="$(CXX)" CC_FOR_BUILD="$(CC)" CXX_FOR_BUILD="$(CXX)"
+COMPILER_ARGS += CC="$(CC)" CXX="$(CXX)"
 else
 # native build
-COMPILER_ARGS += CC="$(CROSS_CC)" CXX="$(CROSS_CXX)" CC_FOR_BUILD="$(CC)" CXX_FOR_BUILD="$(CXX)"
+COMPILER_ARGS += CC="$(CROSS_CC)" CXX="$(CROSS_CXX)"
 endif
 COMMON_CONFIG := $(COMPILER_ARGS) \
 	CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(strip $(STAT) $(LDFLAGS))" \
 	$(COMMON_CONFIG)
+COMMON_MAKE_ARGS += CC_FOR_BUILD="$(CC)" CXX_FOR_BUILD="$(CXX)"
 
 ifeq ($(CPUS),)
 MAKE_ARGS := -j$(shell if command -v nproc >/dev/null 2>&1; then nproc; else echo 2; fi) \
@@ -226,8 +227,8 @@ SYSROOT = /$(TARGET)
 
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(BUILD)
 FULL_GCC_CONFIG += --build=$(BUILD) --host=$(BUILD) \
-	--with-build-sysroot=$(CURDIR)/obj_sysroot \
-	AR_FOR_TARGET=$(CURDIR)/obj_binutils/binutils/ar \
+	--with-build-sysroot=$(CURDIR)/obj_sysroot
+GCC_MAKE_ARGS += AR_FOR_TARGET=$(CURDIR)/obj_binutils/binutils/ar \
 	AS_FOR_TARGET=$(CURDIR)/obj_binutils/gas/as-new \
 	LD_FOR_TARGET=$(CURDIR)/obj_binutils/ld/ld-new \
 	NM_FOR_TARGET=$(CURDIR)/obj_binutils/binutils/nm-new \
@@ -236,12 +237,11 @@ FULL_GCC_CONFIG += --build=$(BUILD) --host=$(BUILD) \
 	RANLIB_FOR_TARGET=$(CURDIR)/obj_binutils/binutils/ranlib \
 	READELF_FOR_TARGET=$(CURDIR)/obj_binutils/binutils/readelf \
 	STRIP_FOR_TARGET=$(CURDIR)/obj_binutils/binutils/strip-new
-
 FULL_MUSL_CONFIG += CC="$(XGCC)" \
 	LIBCC="../obj_gcc/$(TARGET)/libgcc/libgcc.a"
-MUSL_VARS = AR="../obj_binutils/binutils/ar" \
+MUSL_MAKE_ARGS = AR="../obj_binutils/binutils/ar" \
 	RANLIB="../obj_binutils/binutils/ranlib"
-MINGW_VARS = AS="$(XAS)" AR="$(XAR)" CC="$(XGCC)" RANLIB="$(XRANLIB)"
+MINGW_MAKE_ARGS = AS="$(XAS)" AR="$(XAR)" CC="$(XGCC)" RANLIB="$(XRANLIB)"
 FULL_MINGW_PTHREADS_CONFIG += RC="$(XRC)" CC="$(XGCC)" CPP="$(XCPP)" \
 	CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include" \
 	LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib" \
@@ -277,20 +277,15 @@ check-compiler:
 
 else
 # native build
-SYSROOT = /
+SYSROOT = 
 
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(TARGET)
 FULL_GCC_CONFIG += --build=$(BUILD) --host=$(TARGET)
 
-MAKE += STMP_FIXINC=
-ifeq ($(findstring mingw,$(TARGET)),)
-# musl
 FULL_BINUTILS_CONFIG += --with-native-system-header-dir=/include
 FULL_GCC_CONFIG += --with-native-system-header-dir=/include
-MUSL_VARS = 
-else
-# mingw
-endif
+MUSL_MAKE_ARGS = 
+MINGW_MAKE_ARGS = 
 check-compiler:
 	@if ! command -v $(CROSS_CC) >/dev/null; then \
 		echo "$(CROSS_CC) not found in the environment"; \
@@ -404,7 +399,7 @@ obj_binutils/.lc_configured: | obj_binutils src_binutils
 	touch $@
 
 obj_binutils/.lc_built: | obj_binutils/.lc_configured
-	cd obj_binutils && $(MAKE) $(MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_ARGS)" all
+	cd obj_binutils && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(BINUTILS_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)" all
 	touch $@
 
 obj_gcc/.lc_configured: | obj_gcc src_gcc
@@ -412,24 +407,24 @@ obj_gcc/.lc_configured: | obj_gcc src_gcc
 	touch $@
 
 obj_gcc/.lc_gmp_built: | obj_gcc/.lc_configured
-	cd obj_gcc && $(MAKE) $(MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_STATIC_ARGS)" all-gmp
+	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_STATIC_MAKE_ARGS)" all-gmp
 	touch $@
 
 obj_gcc/.lc_mpfr_built: | obj_gcc/.lc_gmp_built
-	cd obj_gcc && $(MAKE) $(MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_STATIC_ARGS)" all-mpfr
+	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_STATIC_MAKE_ARGS)" all-mpfr
 	touch $@
 
 obj_gcc/.lc_mpc_built: | obj_gcc/.lc_mpfr_built
-	cd obj_gcc && $(MAKE) $(MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_STATIC_ARGS)" all-mpc
+	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_STATIC_MAKE_ARGS)" all-mpc
 	touch $@
 
 ifeq ($(MUSL_SRCDIR),)
 obj_gcc/gcc/.lc_built: | obj_gcc/.lc_mpc_built obj_sysroot/.lc_headers
-	cd obj_gcc && $(MAKE) $(MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_ARGS)" all-gcc
+	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)" all-gcc
 	touch $@
 else
 obj_gcc/gcc/.lc_built: | obj_gcc/.lc_mpc_built
-	cd obj_gcc && $(MAKE) $(MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_ARGS)" all-gcc
+	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)" all-gcc
 	touch $@
 endif
 
@@ -448,15 +443,15 @@ obj_sysroot/.lc_headers: | obj_mingw_headers/.lc_configured obj_sysroot
 	touch $@
 else
 obj_sysroot/.lc_headers: | obj_musl/.lc_configured obj_sysroot
-	cd obj_musl && $(MAKE) $(MAKE_ARGS) DESTDIR=$(CURDIR)/obj_sysroot install-headers
+	cd obj_musl && $(MAKE) $(MAKE_ARGS) $(MUSL_MAKE_ARGS) DESTDIR=$(CURDIR)/obj_sysroot install-headers
 	touch $@
 endif
 
 obj_gcc/$(TARGET)/libgcc/libgcc.a: | obj_sysroot/.lc_headers
-	cd obj_gcc && $(MAKE) $(MAKE_ARGS) MAKE="$(MAKE) enable_shared=no $(TOOLCHAIN_ARGS)" all-target-libgcc
+	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) enable_shared=no $(TOOLCHAIN_MAKE_ARGS)" all-target-libgcc
 
 obj_musl/.lc_built: | obj_musl/.lc_configured
-	cd obj_musl && $(MAKE) $(MAKE_ARGS) $(MUSL_VARS)
+	cd obj_musl && $(MAKE) $(MAKE_ARGS) $(MUSL_MAKE_ARGS)
 	touch $@
 
 ifeq ($(MUSL_SRCDIR),)
@@ -464,22 +459,22 @@ obj_sysroot/.lc_libs: | obj_sysroot/.lc_libs_pthreads obj_sysroot/.lc_libs_crt
 	touch $@
 else
 obj_sysroot/.lc_libs: | obj_musl/.lc_built
-	cd obj_musl && $(MAKE) $(MAKE_ARGS) $(MUSL_VARS) DESTDIR=$(CURDIR)/obj_sysroot install
+	cd obj_musl && $(MAKE) $(MAKE_ARGS) $(MUSL_MAKE_ARGS) DESTDIR=$(CURDIR)/obj_sysroot install
 	touch $@
 endif
 
 obj_gcc/.lc_built: | obj_gcc/.lc_configured obj_gcc/gcc/.lc_built
-	cd obj_gcc && $(MAKE) $(MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_ARGS)"
+	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)"
 	touch $@
 
 install-musl: | obj_musl/.lc_built
-	cd obj_musl && $(MAKE) $(MAKE_ARGS) $(MUSL_VARS) DESTDIR=$(DESTDIR)$(OUTPUT)$(SYSROOT) install
+	cd obj_musl && $(MAKE) $(MAKE_ARGS) $(MUSL_MAKE_ARGS) DESTDIR=$(DESTDIR)$(OUTPUT)$(SYSROOT) install
 
 install-binutils: | obj_binutils/.lc_built
-	cd obj_binutils && $(MAKE) $(MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_ARGS)" DESTDIR=$(DESTDIR)$(OUTPUT) install
+	cd obj_binutils && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(BINUTILS_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)" DESTDIR=$(DESTDIR)$(OUTPUT) install
 
 install-gcc: | obj_gcc/.lc_built
-	cd obj_gcc && $(MAKE) $(MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_ARGS)" DESTDIR=$(DESTDIR)$(OUTPUT) install
+	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)" DESTDIR=$(DESTDIR)$(OUTPUT) install
 	ln -sf $(TARGET)-gcc $(DESTDIR)$(OUTPUT)/bin/$(TARGET)-cc
 
 obj_mingw_headers/.lc_configured: | obj_mingw_headers src_mingw
@@ -487,7 +482,7 @@ obj_mingw_headers/.lc_configured: | obj_mingw_headers src_mingw
 	touch $@
 
 obj_mingw_headers/.lc_built: | obj_mingw_headers/.lc_configured
-	cd obj_mingw_headers && $(MAKE) $(MAKE_ARGS) $(MINGW_VARS)
+	cd obj_mingw_headers && $(MAKE) $(MAKE_ARGS) $(MINGW_MAKE_ARGS)
 	touch $@
 
 obj_mingw_crt/.lc_configured: | obj_sysroot/.lc_headers obj_binutils/.lc_built obj_gcc/gcc/.lc_built obj_mingw_crt src_mingw
@@ -495,7 +490,7 @@ obj_mingw_crt/.lc_configured: | obj_sysroot/.lc_headers obj_binutils/.lc_built o
 	touch $@
 
 obj_mingw_crt/.lc_built: | obj_mingw_crt/.lc_configured
-	cd obj_mingw_crt && $(MAKE) $(MAKE_ARGS) $(MINGW_VARS)
+	cd obj_mingw_crt && $(MAKE) $(MAKE_ARGS) $(MINGW_MAKE_ARGS)
 	touch $@
 
 obj_mingw_pthreads/.lc_configured: | obj_mingw_crt/.lc_built obj_mingw_pthreads src_mingw
@@ -503,25 +498,25 @@ obj_mingw_pthreads/.lc_configured: | obj_mingw_crt/.lc_built obj_mingw_pthreads 
 	touch $@
 
 obj_mingw_pthreads/.lc_built: | obj_mingw_pthreads/.lc_configured
-	cd obj_mingw_pthreads && $(MAKE) $(MAKE_ARGS) $(MINGW_VARS)
+	cd obj_mingw_pthreads && $(MAKE) $(MAKE_ARGS) $(MINGW_MAKE_ARGS)
 	touch $@
 
 obj_sysroot/.lc_libs_pthreads: | obj_mingw_pthreads/.lc_built
-	cd obj_mingw_pthreads && $(MAKE) $(MAKE_ARGS) $(MINGW_VARS) DESTDIR=$(CURDIR)/obj_sysroot/$(TARGET) install
+	cd obj_mingw_pthreads && $(MAKE) $(MAKE_ARGS) $(MINGW_MAKE_ARGS) DESTDIR=$(CURDIR)/obj_sysroot/$(TARGET) install
 	touch $@
 
 obj_sysroot/.lc_libs_crt: | obj_mingw_crt/.lc_built
-	cd obj_mingw_crt && $(MAKE) $(MAKE_ARGS) $(MINGW_VARS) DESTDIR=$(CURDIR)/obj_sysroot/$(TARGET) install
+	cd obj_mingw_crt && $(MAKE) $(MAKE_ARGS) $(MINGW_MAKE_ARGS) DESTDIR=$(CURDIR)/obj_sysroot/$(TARGET) install
 	touch $@
 
 install-mingw-headers: | obj_mingw_headers/.lc_configured
-	cd obj_mingw_headers && $(MAKE) $(MAKE_ARGS) $(MINGW_VARS) DESTDIR=$(DESTDIR)$(OUTPUT)$(SYSROOT) install
+	cd obj_mingw_headers && $(MAKE) $(MAKE_ARGS) $(MINGW_MAKE_ARGS) DESTDIR=$(DESTDIR)$(OUTPUT)$(SYSROOT) install
 
 install-mingw-crt: | obj_mingw_crt/.lc_built
-	cd obj_mingw_crt && $(MAKE) $(MAKE_ARGS) $(MINGW_VARS) DESTDIR=$(DESTDIR)$(OUTPUT)$(SYSROOT) install
+	cd obj_mingw_crt && $(MAKE) $(MAKE_ARGS) $(MINGW_MAKE_ARGS) DESTDIR=$(DESTDIR)$(OUTPUT)$(SYSROOT) install
 
 install-mingw-pthreads: | obj_mingw_pthreads/.lc_built
-	cd obj_mingw_pthreads && $(MAKE) $(MAKE_ARGS) $(MINGW_VARS) DESTDIR=$(DESTDIR)$(OUTPUT)$(SYSROOT) install
+	cd obj_mingw_pthreads && $(MAKE) $(MAKE_ARGS) $(MINGW_MAKE_ARGS) DESTDIR=$(DESTDIR)$(OUTPUT)$(SYSROOT) install
 
 install-mingw: install-mingw-headers install-mingw-crt install-mingw-pthreads
 

@@ -11,7 +11,9 @@ MINGW_CRT_CONFIG =
 MINGW_HEADERS_CONFIG =
 TOOLCHAIN_CONFIG = 
 OPTIMIZE_LEVEL = 
-COMMON_FLAGS = -g0 -pipe -Wno-error
+COMMON_FLAGS = -g0 -Wno-error
+CC = gcc
+CXX = g++
 CFLAGS = 
 CXXFLAGS = 
 LDFLAGS = -s
@@ -27,8 +29,10 @@ DLLTOOL = $(CURDIR)/obj_binutils/binutils/dlltool
 
 -include config.mak
 
+ifeq ($(CROSS_CC)$(CROSS_CXX),)
 CROSS_CC = $(TARGET)-gcc
 CROSS_CXX = $(TARGET)-g++
+endif
 
 ifeq ($(OPTIMIZE_LEVEL),)
 OPTIMIZE_LEVEL = s
@@ -62,10 +66,10 @@ CXXFLAGS := $(strip $(COMMON_FLAGS) $(CXXFLAGS))
 
 ifeq ($(NATIVE),)
 # cross build
-COMPILER_ARGS += CC="$(CC)" CXX="$(CXX)"
+COMPILER_ARGS += CC="$(CC)" CXX="$(CXX)" CC_FOR_BUILD="$(CC)" CXX_FOR_BUILD="$(CXX)"
 else
 # native build
-COMPILER_ARGS += CC="$(CROSS_CC)" CXX="$(CROSS_CXX)"
+COMPILER_ARGS += CC="$(CROSS_CC)" CXX="$(CROSS_CXX)" CC_FOR_BUILD="$(CC)" CXX_FOR_BUILD="$(CXX)"
 endif
 COMMON_CONFIG := $(COMPILER_ARGS) \
 	CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(strip $(STAT) $(LDFLAGS))" \

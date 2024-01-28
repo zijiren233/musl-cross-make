@@ -206,6 +206,7 @@ FULL_BINUTILS_CONFIG = $(COMMON_CONFIG) $(BINUTILS_CONFIG) $(TOOLCHAIN_CONFIG)
 
 FULL_GCC_CONFIG = $(COMMON_CONFIG) \
 	$(GCC_CONFIG) $(GCC_CONFIG_FOR_TARGET) $(TOOLCHAIN_CONFIG) \
+	--with-build-sysroot=$(CURDIR)/obj_sysroot \
     $(OVERRIDE)
 
 FULL_MUSL_CONFIG = $(MUSL_CONFIG) \
@@ -232,8 +233,7 @@ ifeq ($(NATIVE),)
 SYSROOT = /$(TARGET)
 
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(BUILD)
-FULL_GCC_CONFIG += --build=$(BUILD) --host=$(BUILD) \
-	--with-build-sysroot=$(CURDIR)/obj_sysroot
+FULL_GCC_CONFIG += --build=$(BUILD) --host=$(BUILD)
 GCC_MAKE_ARGS += AR_FOR_TARGET=$(CURDIR)/obj_binutils/binutils/ar \
 	AS_FOR_TARGET=$(CURDIR)/obj_binutils/gas/as-new \
 	LD_FOR_TARGET=$(CURDIR)/obj_binutils/ld/ld-new \
@@ -260,10 +260,11 @@ obj_mingw_crt/.lc_configured: | obj_sysroot/.lc_headers obj_gcc/gcc/.lc_built ob
 obj_mingw_pthreads/.lc_configured: | obj_sysroot/.lc_headers obj_gcc/gcc/.lc_built obj_binutils/.lc_built obj_sysroot/.lc_libs_crt
 obj_musl/.lc_configured: | obj_gcc/gcc/.lc_built
 obj_musl/.lc_built: | obj_gcc/$(TARGET)/libgcc/libgcc.a
-obj_gcc/gcc/.lc_built: | obj_sysroot/usr obj_sysroot/lib32 obj_sysroot/lib64 obj_sysroot/include
 ifneq ($(MUSL_SRCDIR),)
+# musl
 obj_gcc/.lc_built: | obj_sysroot/.lc_libs obj_sysroot/.lc_headers
 else
+# mingw
 ifeq ($(findstring --enable-threads=posix,$(FULL_GCC_CONFIG)),)
 obj_gcc/.lc_built: | obj_sysroot/.lc_libs_crt obj_sysroot/.lc_headers
 else
@@ -287,14 +288,9 @@ SYSROOT =
 
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(TARGET)
 FULL_GCC_CONFIG += --build=$(BUILD) --host=$(TARGET)
-
+FULL_MUSL_CONFIG += CC="$(CROSS_CC)"
 MUSL_MAKE_ARGS = 
 MINGW_MAKE_ARGS = 
-
-ifeq ($(MUSL_SRCDIR),)
-# mingw default use /mingw/include
-FULL_GCC_CONFIG += --with-build-sysroot=$(CURDIR)/obj_sysroot
-endif
 check-compiler:
 	@if ! command -v $(CROSS_CC) >/dev/null; then \
 		echo "$(CROSS_CC) not found in the environment"; \
@@ -427,15 +423,17 @@ obj_gcc/.lc_mpc_built: | obj_gcc/.lc_mpfr_built
 	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_STATIC_MAKE_ARGS)" all-mpc
 	touch $@
 
-ifeq ($(MUSL_SRCDIR),)
-obj_gcc/gcc/.lc_built: | obj_gcc/.lc_mpc_built obj_sysroot/.lc_headers
-	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)" all-gcc
-	touch $@
+ifneq ($(NATIVE)$(MINGW_SRCDIR),)
+# native build or mingw on build xgcc need headers
+obj_gcc/gcc/.lc_built: obj_sysroot/.lc_headers | obj_sysroot/usr obj_sysroot/lib32 obj_sysroot/lib64 obj_sysroot/include
 else
+# cross build and musl on build xgcc does not need headers
+# but on all-target-libgcc need headers
+obj_gcc/$(TARGET)/libgcc/libgcc.a: | obj_sysroot/usr obj_sysroot/lib32 obj_sysroot/lib64 obj_sysroot/include
+endif
 obj_gcc/gcc/.lc_built: | obj_gcc/.lc_mpc_built
 	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)" all-gcc
 	touch $@
-endif
 
 obj_musl/.lc_configured: | obj_musl src_musl
 	cd obj_musl && ../src_musl/configure $(FULL_MUSL_CONFIG)
@@ -485,6 +483,9 @@ install-binutils: | obj_binutils/.lc_built
 install-gcc: | obj_gcc/.lc_built
 	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)" DESTDIR=$(DESTDIR)$(OUTPUT) install
 	ln -sf $(TARGET)-gcc $(DESTDIR)$(OUTPUT)/bin/$(TARGET)-cc
+	if [ -n "$(NATIVE)" ]; then \
+		ln -sf $(TARGET)-gcc $(DESTDIR)$(OUTPUT)/bin/cc; \
+	fi
 
 obj_mingw_headers/.lc_configured: | obj_mingw_headers src_mingw
 	cd obj_mingw_headers && ../src_mingw/mingw-w64-headers/configure $(FULL_MINGW_HEADERS_CONFIG)

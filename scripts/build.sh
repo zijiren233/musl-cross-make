@@ -371,14 +371,15 @@ function Build() {
     if [ "$TEST_BUILD_ONLY" ]; then
         rm -rf "${CROSS_DIST_NAME}" "${NATIVE_DIST_NAME}"
     elif [ "$ENABLE_ARCHIVE" ]; then
-        tar -zcf "${CROSS_DIST_NAME}.tgz" -C "${CROSS_DIST_NAME}" .
-        echo "package ${CROSS_DIST_NAME} to ${CROSS_DIST_NAME}.tgz success"
+        if [ ! "$ONLY_NATIVE_BUILD" ]; then
+            tar -zcf "${CROSS_DIST_NAME}.tgz" -C "${CROSS_DIST_NAME}" .
+            echo "package ${CROSS_DIST_NAME} to ${CROSS_DIST_NAME}.tgz success"
+        fi
 
         if [ "$NATIVE_BUILD" ]; then
             tar -zcf "${NATIVE_DIST_NAME}.tgz" -C "${NATIVE_DIST_NAME}" .
             echo "package ${NATIVE_DIST_NAME} to ${NATIVE_DIST_NAME}.tgz success"
         fi
-        rm -rf "${CROSS_DIST_NAME}" "${NATIVE_DIST_NAME}"
     fi
 }
 

@@ -42,8 +42,8 @@ jobs:
           name: sources
           path: sources
 
-  build_targets_on_linux_armv7:
-    name: Build
+  build_targets_on_linux_armv7_cross:
+    name: Build cross
     runs-on: ubuntu-latest
     needs:
       - init
@@ -69,7 +69,6 @@ jobs:
             --volume "${PWD}:/build"
           shell: /bin/sh
           install: |
-            apt update && apt upgrade -y
             apk add --no-cache \
               coreutils \
               curl \
@@ -79,12 +78,11 @@ jobs:
               bison \
               rsync \
               patch \
-              musl-dev \
               g++
           run: |
             cd /build
             sh scripts/build.sh \
-                -nLO0 \
+                -LO0 \
                 -T "${{ matrix.targets }}"
 
       - name: Upload ${{ matrix.targets }} cross
@@ -92,6 +90,55 @@ jobs:
         with:
           name: ${{ matrix.targets }}-cross-linux-armv7
           path: dist/${{ matrix.targets }}-cross
+
+  build_targets_on_linux_armv7_native:
+    name: Build native
+    runs-on: ubuntu-latest
+    needs:
+      - init
+      - build_targets_on_linux_armv7_cross
+    strategy:
+      matrix:
+        targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: sources
+          path: sources
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.targets }}-cross-linux-armv7
+          path: dist/${{ matrix.targets }}-cross
+
+      - uses: uraimo/run-on-arch-action@v2
+        name: Build
+        id: build
+        with:
+          arch: armv7
+          distro: alpine_latest
+          githubToken: ${{ github.token }}
+          dockerRunArgs: |
+            --volume "${PWD}:/build"
+          shell: /bin/sh
+          install: |
+            apk add --no-cache \
+              coreutils \
+              curl \
+              bzip2 \
+              xz \
+              make \
+              bison \
+              rsync \
+              patch \
+              g++
+          run: |
+            cd /build
+            sh scripts/build.sh \
+                -NLO0 \
+                -T "${{ matrix.targets }}"
 
       - name: Upload ${{ matrix.targets }} native
         uses: actions/upload-artifact@v4

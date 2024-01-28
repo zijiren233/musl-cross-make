@@ -5,6 +5,7 @@ on:
     branches: ["master"]
   pull_request:
     branches: ["master"]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -65,7 +66,8 @@ jobs:
 
       - name: Init Dependencies
         run: |
-          brew install llvm \
+          brew install \
+            llvm \
             make \
             gnu-sed \
             gawk \
@@ -75,7 +77,7 @@ jobs:
       - name: Build
         run: |
           bash scripts/build.sh \
-            -sLO0 \
+            -sLO1 \
             -c "llvm-gcc" \
             -x "llvm-g++" \
             -T "${{ matrix.targets }}"
@@ -85,9 +87,3 @@ jobs:
         with:
           name: ${{ matrix.targets }}-cross-darwin-amd64
           path: dist/${{ matrix.targets }}-cross
-
-      - name: Upload ${{ matrix.targets }} native
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.targets }}-native-darwin-amd64
-          path: dist/${{ matrix.targets }}-native

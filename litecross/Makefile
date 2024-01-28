@@ -36,6 +36,11 @@ endif
 
 ifeq ($(OPTIMIZE_LEVEL),)
 OPTIMIZE_LEVEL = s
+else
+ifeq ($(OPTIMIZE_LEVEL),0)
+# dont use -O0
+OPTIMIZE_LEVEL = 1
+endif
 endif
 COMMON_FLAGS := -O$(OPTIMIZE_LEVEL) $(COMMON_FLAGS)
 
@@ -185,7 +190,8 @@ GCC_CONFIG := --enable-languages=c,c++ \
 	--disable-libmudflap --disable-libsanitizer \
 	--disable-gnu-indirect-function \
 	--disable-libmpx \
-	--enable-libstdcxx-time \
+	--enable-libstdcxx-time=yes \
+	--enable-libstdcxx-filesystem-ts=yes \
 	--enable-default-pie --enable-static-pie \
 	--disable-decimal-float \
 	$(GCC_CONFIG)
@@ -282,10 +288,13 @@ SYSROOT =
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(TARGET)
 FULL_GCC_CONFIG += --build=$(BUILD) --host=$(TARGET)
 
-FULL_BINUTILS_CONFIG += --with-native-system-header-dir=/include
-FULL_GCC_CONFIG += --with-native-system-header-dir=/include
 MUSL_MAKE_ARGS = 
 MINGW_MAKE_ARGS = 
+
+ifeq ($(MUSL_SRCDIR),)
+# mingw default use /mingw/include
+FULL_GCC_CONFIG += --with-build-sysroot=$(CURDIR)/obj_sysroot
+endif
 check-compiler:
 	@if ! command -v $(CROSS_CC) >/dev/null; then \
 		echo "$(CROSS_CC) not found in the environment"; \

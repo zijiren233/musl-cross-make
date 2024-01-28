@@ -5,6 +5,7 @@ on:
     branches: ["master"]
   pull_request:
     branches: ["master"]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -63,17 +64,17 @@ jobs:
         id: build
         with:
           arch: riscv64
-          distro: alpine_latest
+          distro: ubuntu_latest
           githubToken: ${{ github.token }}
           dockerRunArgs: |
             --volume "${PWD}:/build"
-          shell: /bin/sh
+          shell: /bin/bash
           install: |
-            apk add --no-cache \
+            apt update && apt install -y \
               coreutils \
               curl \
               bzip2 \
-              xz \
+              xz-utils \
               make \
               bison \
               rsync \
@@ -81,8 +82,8 @@ jobs:
               g++
           run: |
             cd /build
-            sh scripts/build.sh \
-                -LO0 \
+            bash scripts/build.sh \
+                -LO1 \
                 -T "${{ matrix.targets }}"
 
       - name: Upload ${{ matrix.targets }} cross
@@ -118,17 +119,17 @@ jobs:
         id: build
         with:
           arch: riscv64
-          distro: alpine_latest
+          distro: ubuntu_latest
           githubToken: ${{ github.token }}
           dockerRunArgs: |
             --volume "${PWD}:/build"
-          shell: /bin/sh
+          shell: /bin/bash
           install: |
-            apk add --no-cache \
+            apt update && apt install -y \
               coreutils \
               curl \
               bzip2 \
-              xz \
+              xz-utils \
               make \
               bison \
               rsync \
@@ -136,8 +137,8 @@ jobs:
               g++
           run: |
             cd /build
-            sh scripts/build.sh \
-                -NLO0 \
+            bash scripts/build.sh \
+                -NLO1 \
                 -T "${{ matrix.targets }}"
 
       - name: Upload ${{ matrix.targets }} native

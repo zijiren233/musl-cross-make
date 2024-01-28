@@ -5,6 +5,7 @@ on:
     branches: ["master"]
   pull_request:
     branches: ["master"]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -82,7 +83,7 @@ jobs:
           run: |
             cd /build
             sh scripts/build.sh \
-                -LO0 \
+                -LO1 \
                 -T "${{ matrix.targets }}"
 
       - name: Upload ${{ matrix.targets }} cross
@@ -137,7 +138,7 @@ jobs:
           run: |
             cd /build
             sh scripts/build.sh \
-                -NLO0 \
+                -NLO1 \
                 -T "${{ matrix.targets }}"
 
       - name: Upload ${{ matrix.targets }} native

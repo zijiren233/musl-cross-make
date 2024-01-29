@@ -52,6 +52,7 @@ jobs:
       matrix:
         targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
         exclude:
+          - targets: powerpc64-linux-musl
           - targets: i486-w64-mingw32
           - targets: i686-w64-mingw32
           - targets: x86_64-w64-mingw32
@@ -66,7 +67,6 @@ jobs:
       - name: Init Dependencies
         run: |
           brew install \
-            llvm \
             make \
             gnu-sed \
             gawk \
@@ -77,8 +77,6 @@ jobs:
         run: |
           bash scripts/build.sh \
             -sLO1 \
-            -c "llvm-gcc" \
-            -x "llvm-g++" \
             -T "${{ matrix.targets }}"
 
       - name: Upload ${{ matrix.targets }} cross

@@ -1,6 +1,7 @@
 SOURCES = sources
 
 CONFIG_SUB_REV = 28ea239c53a2
+CONFIG_GUESS_REV = 28ea239c53a2
 GCC_VER = 13.2.0
 MUSL_VER = 1.2.4
 BINUTILS_VER = 2.41
@@ -129,6 +130,14 @@ $(SOURCES)/config.sub: | $(SOURCES)
 	mv $@.tmp/$(notdir $@) $@
 	rm -rf $@.tmp
 
+$(SOURCES)/config.guess: | $(SOURCES)
+	mkdir -p $@.tmp
+	cd $@.tmp && $(DL_CMD) $(notdir $@) "https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=$(CONFIG_GUESS_REV)"
+	cd $@.tmp && touch $(notdir $@)
+	cd $@.tmp && $(SHA1_CMD) $(CURDIR)/hashes/$(notdir $@).$(CONFIG_GUESS_REV).sha1
+	mv $@.tmp/$(notdir $@) $@
+	rm -rf $@.tmp
+
 $(SOURCES)/%: hashes/%.sha1 | $(SOURCES)
 	mkdir -p $@.tmp
 	cd $@.tmp && $(DL_CMD) $(notdir $@) $(SITE)/$(notdir $@)
@@ -138,7 +147,6 @@ $(SOURCES)/%: hashes/%.sha1 | $(SOURCES)
 	rm -rf $@.tmp
 
 endif
-
 
 # Rules for extracting and patching sources, or checking them out from git.
 
@@ -181,26 +189,28 @@ musl-git-%:
 
 ifeq ($(findstring mingw,$(TARGET)),)
 # musl
-%: %.orig | $(SOURCES)/config.sub
+%: %.orig | $(SOURCES)/config.sub $(SOURCES)/config.guess
 	case "$@" in */*) exit 1 ;; esac
 	rm -rf $@.tmp
 	mkdir $@.tmp
 	( cd $@.tmp && $(COWPATCH) -I ../$< )
 	test ! -d patches/$@ || cat $(filter-out %-mingw.diff,$(wildcard patches/$@/*)) | ( cd $@.tmp && $(COWPATCH) -p1 )
-	if test -f $</configfsf.sub ; then cs=configfsf.sub ; elif test -f $</config.sub ; then cs=config.sub ; else exit 0 ; fi ; rm -f $@.tmp/$$cs && cp -f $(SOURCES)/config.sub $@.tmp/$$cs && chmod +x $@.tmp/$$cs
+	( cd $@.tmp && find -L . -name config.sub -type f -exec cp -f $(CURDIR)/$(SOURCES)/config.sub {} \; -exec chmod +x {} \; )
+	( cd $@.tmp && find -L . -name config.guess -type f -exec cp -f $(CURDIR)/$(SOURCES)/config.guess {} \; -exec chmod +x {} \; )
 	rm -rf $@
 	mv $@.tmp $@
 	$(COWPATCH) -S gcc-$(GCC_VER)/libstdc++-v3
 else
 # mingw
 # fix ld: unrecognized option '-z'
-%: %.orig | $(SOURCES)/config.sub
+%: %.orig | $(SOURCES)/config.sub $(SOURCES)/config.guess
 	case "$@" in */*) exit 1 ;; esac
 	rm -rf $@.tmp
 	mkdir $@.tmp
 	( cd $@.tmp && $(COWPATCH) -I ../$< )
 	test ! -d patches/$@ || cat $(filter-out %-musl.diff,$(wildcard patches/$@/*)) | ( cd $@.tmp && $(COWPATCH) -p1 )
-	if test -f $</configfsf.sub ; then cs=configfsf.sub ; elif test -f $</config.sub ; then cs=config.sub ; else exit 0 ; fi ; rm -f $@.tmp/$$cs && cp -f $(SOURCES)/config.sub $@.tmp/$$cs && chmod +x $@.tmp/$$cs
+	( cd $@.tmp && find -L . -name config.sub -type f -exec cp -f $(CURDIR)/$(SOURCES)/config.sub {} \; -exec chmod +x {} \; )
+	( cd $@.tmp && find -L . -name config.guess -type f -exec cp -f $(CURDIR)/$(SOURCES)/config.guess {} \; -exec chmod +x {} \; )
 	rm -rf $@
 	mv $@.tmp $@
 	$(COWPATCH) -S gcc-$(GCC_VER)/libstdc++-v3

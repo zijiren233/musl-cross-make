@@ -81,6 +81,7 @@ jobs:
               patch \
               g++
           run: |
+            echo ::set-output name=unamespacer::$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)
             cd /build
             bash scripts/build.sh \
                 -L \
@@ -94,7 +95,8 @@ jobs:
 
       - name: Archive
         run: |
-          tar -zcvf dist/${{ matrix.targets }}-cross-$(uname -s)-$(uname -m).tgz \
+          chmod -R 0755 dist
+          tar -zcvf dist/${{ matrix.targets }}-cross-${{ steps.build.outputs.unamespacer }}.tgz \
             -C dist/${{ matrix.targets }}-cross \
             .
 
@@ -154,6 +156,7 @@ jobs:
               patch \
               g++
           run: |
+            echo ::set-output name=unamespacer::$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)
             cd /build
             bash scripts/build.sh \
                 -NL \
@@ -161,7 +164,8 @@ jobs:
 
       - name: Archive
         run: |
-          tar -zcvf dist/${{ matrix.targets }}-native-$(uname -s)-$(uname -m).tgz \
+          chmod -R 0755 dist
+          tar -zcvf dist/${{ matrix.targets }}-native-${{ steps.build.outputs.unamespacer }}.tgz \
             -C dist/${{ matrix.targets }}-native \
             .
 

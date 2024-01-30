@@ -59,17 +59,20 @@ jobs:
           path: sources
 
       - name: Build
+        id: build
         run: |
+          echo ::set-output name=unamespacer::$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)
           bash scripts/build.sh \
             -nL \
             -T "${{ matrix.targets }}"
 
       - name: Archive
         run: |
-          tar -zcvf dist/${{ matrix.targets }}-cross-$(uname -s)-$(uname -m).tgz \
+          chmod -R 0755 dist
+          tar -zcvf dist/${{ matrix.targets }}-cross-${{ steps.build.outputs.unamespacer }}.tgz \
             -C dist/${{ matrix.targets }}-cross \
             .
-          tar -zcvf dist/${{ matrix.targets }}-native-$(uname -s)-$(uname -m).tgz \
+          tar -zcvf dist/${{ matrix.targets }}-native-${{ steps.build.outputs.unamespacer }}.tgz \
             -C dist/${{ matrix.targets }}-native \
             .
 

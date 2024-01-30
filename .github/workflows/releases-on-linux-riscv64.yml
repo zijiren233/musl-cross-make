@@ -1,15 +1,9 @@
-name: build-on-linux-s390x
+name: releases-on-linux-riscv64
 
 on:
   push:
-    branches: ["master"]
-  pull_request:
-    branches: ["master"]
-  workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+    tags:
+      - "v*"
 
 jobs:
   init:
@@ -17,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       TARGETS: ${{ steps.get_all_targets.outputs.TARGETS }}
+      VERSION: ${{ steps.get_version.outputs.VERSION }}
     steps:
       - uses: actions/checkout@v4
 
@@ -34,6 +29,10 @@ jobs:
           json="[${json%,}]"
           echo "TARGETS=$json" >> $GITHUB_OUTPUT
 
+      - name: Get version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_OUTPUT
+
       - name: Init sources
         run: |
           make extract_all
@@ -43,7 +42,7 @@ jobs:
           name: sources
           path: sources
 
-  build_targets_on_linux_s390x_cross:
+  build_targets_on_linux_riscv64_cross:
     name: Build cross
     runs-on: ubuntu-latest
     needs:
@@ -63,18 +62,18 @@ jobs:
         name: Build
         id: build
         with:
-          arch: s390x
-          distro: alpine_latest
+          arch: riscv64
+          distro: ubuntu_latest
           githubToken: ${{ github.token }}
           dockerRunArgs: |
             --volume "${PWD}:/build"
-          shell: /bin/sh
+          shell: /bin/bash
           install: |
-            apk add --no-cache \
+            apt update && apt install -y \
               coreutils \
               curl \
               bzip2 \
-              xz \
+              xz-utils \
               make \
               bison \
               rsync \
@@ -82,8 +81,9 @@ jobs:
               g++
           run: |
             cd /build
-            sh scripts/build.sh \
-                -LO1 \
+            chmod -R 0755 dist
+            bash scripts/build.sh \
+                -L \
                 -T "${{ matrix.targets }}"
 
       - name: Upload ${{ matrix.targets }} cross
@@ -92,12 +92,29 @@ jobs:
           name: ${{ matrix.targets }}-cross
           path: dist/${{ matrix.targets }}-cross
 
-  build_targets_on_linux_s390x_native:
+      - name: Archive
+        run: |
+          tar -zcvf dist/${{ matrix.targets }}-cross-$(uname -s)-$(uname -m).tgz \
+            -C dist/${{ matrix.targets }}-cross \
+            .
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.init.outputs.VERSION }}
+          draft: false
+          prerelease: false
+          append_body: false
+          fail_on_unmatched_files: true
+          files: |
+            dist/*.tgz
+
+  build_targets_on_linux_riscv64_native:
     name: Build native
     runs-on: ubuntu-latest
     needs:
       - init
-      - build_targets_on_linux_s390x_cross
+      - build_targets_on_linux_riscv64_cross
     strategy:
       matrix:
         targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
@@ -118,18 +135,18 @@ jobs:
         name: Build
         id: build
         with:
-          arch: s390x
-          distro: alpine_latest
+          arch: riscv64
+          distro: ubuntu_latest
           githubToken: ${{ github.token }}
           dockerRunArgs: |
             --volume "${PWD}:/build"
-          shell: /bin/sh
+          shell: /bin/bash
           install: |
-            apk add --no-cache \
+            apt update && apt install -y \
               coreutils \
               curl \
               bzip2 \
-              xz \
+              xz-utils \
               make \
               bison \
               rsync \
@@ -138,12 +155,23 @@ jobs:
           run: |
             cd /build
             chmod -R 0755 dist
-            sh scripts/build.sh \
-                -NLO1 \
+            bash scripts/build.sh \
+                -NL \
                 -T "${{ matrix.targets }}"
 
-      - name: Upload ${{ matrix.targets }} native
-        uses: actions/upload-artifact@v4
+      - name: Archive
+        run: |
+          tar -zcvf dist/${{ matrix.targets }}-native-$(uname -s)-$(uname -m).tgz \
+            -C dist/${{ matrix.targets }}-native \
+            .
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: ${{ matrix.targets }}-native
-          path: dist/${{ matrix.targets }}-native
+          tag_name: ${{ needs.init.outputs.VERSION }}
+          draft: false
+          prerelease: false
+          append_body: false
+          fail_on_unmatched_files: true
+          files: |
+            dist/*.tgz

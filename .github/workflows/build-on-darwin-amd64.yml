@@ -52,7 +52,7 @@ jobs:
       matrix:
         targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
         exclude:
-          - targets: powerpc64-linux-musl
+          - targets: powerpc64le-linux-musl
           - targets: i486-w64-mingw32
           - targets: i686-w64-mingw32
           - targets: x86_64-w64-mingw32
@@ -82,5 +82,5 @@ jobs:
       - name: Upload ${{ matrix.targets }} cross
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.targets }}-cross-darwin-amd64
+          name: ${{ matrix.targets }}-cross
           path: dist/${{ matrix.targets }}-cross

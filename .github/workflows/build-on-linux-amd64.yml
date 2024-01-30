@@ -68,11 +68,11 @@ jobs:
       - name: Upload ${{ matrix.targets }} cross
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.targets }}-cross-linux-amd64
+          name: ${{ matrix.targets }}-cross
           path: dist/${{ matrix.targets }}-cross
 
       - name: Upload ${{ matrix.targets }} native
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.targets }}-native-linux-amd64
+          name: ${{ matrix.targets }}-native
           path: dist/${{ matrix.targets }}-native

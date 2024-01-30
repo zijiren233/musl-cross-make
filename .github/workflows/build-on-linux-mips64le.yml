@@ -90,7 +90,7 @@ jobs:
       - name: Upload ${{ matrix.targets }} cross
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.targets }}-cross-linux-mips64le
+          name: ${{ matrix.targets }}-cross
           path: dist/${{ matrix.targets }}-cross
 
   build_targets_on_linux_mips64le_native:
@@ -112,7 +112,7 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.targets }}-cross-linux-mips64le
+          name: ${{ matrix.targets }}-cross
           path: dist/${{ matrix.targets }}-cross
 
       - uses: uraimo/run-on-arch-action@v2
@@ -139,6 +139,7 @@ jobs:
               g++
           run: |
             cd /build
+            chmod -R 0755 dist
             bash scripts/build.sh \
                 -NLO1 \
                 -T "${{ matrix.targets }}"
@@ -146,5 +147,5 @@ jobs:
       - name: Upload ${{ matrix.targets }} native
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.targets }}-native-linux-mips64le
+          name: ${{ matrix.targets }}-native
           path: dist/${{ matrix.targets }}-native

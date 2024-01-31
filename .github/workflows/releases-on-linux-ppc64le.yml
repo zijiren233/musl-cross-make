@@ -94,8 +94,8 @@ jobs:
 
       - name: Archive
         run: |
-          chmod -R 0755 dist
-          tar -zcvf dist/${{ matrix.targets }}-cross-${{ steps.build.outputs.unamespacer }}.tgz \
+          mkdir -p archive
+          tar -zcvf archive/${{ matrix.targets }}-cross-${{ steps.build.outputs.unamespacer }}.tgz \
             -C dist/${{ matrix.targets }}-cross \
             .
 
@@ -108,7 +108,7 @@ jobs:
           append_body: false
           fail_on_unmatched_files: true
           files: |
-            dist/*.tgz
+            archive/*.tgz
 
   build_targets_on_linux_ppc64le_native:
     name: Build native
@@ -156,15 +156,15 @@ jobs:
           run: |
             echo ::set-output name=unamespacer::$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)
             cd /build
-            chmod -R 0755 dist
+            chmod -R 0755 dist/${{ matrix.targets }}-cross
             sh scripts/build.sh \
                 -NL \
                 -T "${{ matrix.targets }}"
 
       - name: Archive
         run: |
-          chmod -R 0755 dist
-          tar -zcvf dist/${{ matrix.targets }}-native-${{ steps.build.outputs.unamespacer }}.tgz \
+          mkdir -p archive
+          tar -zcvf archive/${{ matrix.targets }}-native-${{ steps.build.outputs.unamespacer }}.tgz \
             -C dist/${{ matrix.targets }}-native \
             .
 
@@ -177,4 +177,4 @@ jobs:
           append_body: false
           fail_on_unmatched_files: true
           files: |
-            dist/*.tgz
+            archive/*.tgz

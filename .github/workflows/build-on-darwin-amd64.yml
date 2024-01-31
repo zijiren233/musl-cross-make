@@ -54,8 +54,6 @@ jobs:
         exclude:
           - targets: powerpc64le-linux-musl
           - targets: i486-w64-mingw32
-          - targets: i686-w64-mingw32
-          - targets: x86_64-w64-mingw32
     steps:
       - uses: actions/checkout@v4
 

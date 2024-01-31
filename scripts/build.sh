@@ -220,6 +220,8 @@ function ParseArgs() {
             ;;
         esac
     done
+    shift $((OPTIND - 1))
+    MORE_ARGS="$@"
 }
 
 function FixArgs() {
@@ -315,7 +317,7 @@ function Build() {
             fi
         done < <(
             set +e
-            $MAKE install 2>&1
+            $MAKE $MORE_ARGS install 2>&1
             echo $? >"${CROSS_DIST_NAME}.exit"
         )
         read EXIT_CODE <"${CROSS_DIST_NAME}.exit"
@@ -352,7 +354,7 @@ function Build() {
         done < <(
             set +e
             PATH="${CROSS_DIST_NAME}/bin:${PATH}" \
-                $MAKE install 2>&1
+                $MAKE $MORE_ARGS install 2>&1
             echo $? >"${NATIVE_DIST_NAME}.exit"
         )
         read EXIT_CODE <"${NATIVE_DIST_NAME}.exit"

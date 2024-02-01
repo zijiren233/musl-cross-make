@@ -150,11 +150,12 @@ function Help() {
     echo "-s: disable cross static build"
     echo "-S: disable native static build"
     echo "-p: dist name prefix"
+    echo "-u: dist name suffix"
     echo "-i: simpler build"
 }
 
 function ParseArgs() {
-    while getopts "hatT:Cc:x:nLlO:j:sSNp:i" arg; do
+    while getopts "hatT:Cc:x:nLlO:j:sSNp:u:i" arg; do
         case $arg in
         h)
             Help
@@ -211,6 +212,9 @@ function ParseArgs() {
         p)
             DIST_NAME_PREFIX="$OPTARG"
             ;;
+        u)
+            DIST_NAME_SUFFIX="$OPTARG"
+            ;;
         i)
             SIMPLER_BUILD="true"
             ;;
@@ -242,14 +246,11 @@ OUTPUT = ${OUTPUT}
 GCC_VER = ${GCC_VER}
 MUSL_VER = ${MUSL_VER}
 BINUTILS_VER = ${BINUTILS_VER}
-
-ifneq (\$(findstring or1k,\$(TARGET)),)
-# or1k
-# in binutils 2.41, ld exit with code 11
-BINUTILS_VER = 2.37
-else
 # \`--disable-gprofng\` fix gprofng: unknown type name off64_t in \`binutils version 2.38+\`
 BINUTILS_CONFIG += --disable-gprofng
+ifneq (\$(findstring or1k,\$(TARGET)),)
+# or1k in binutils 2.41, ld exit with code 11
+BINUTILS_VER = 2.37
 endif
 
 GMP_VER = ${GMP_VER}
@@ -280,12 +281,6 @@ ifeq (\$(shell uname),Darwin)
 CXX += -std=gnu++17
 endif
 
-ifneq (\$(findstring 86-w64-mingw32,\$(TARGET)),)
-# i486-w64-mingw32 i686-w64-mingw32
-# disable tls in gcc 13.2.0
-GCC_CONFIG += --disable-tls
-endif
-
 COMMON_CONFIG += --with-debug-prefix-map=\$(CURDIR)= --enable-compressed-debug-sections=none
 EOF
 }
@@ -293,8 +288,8 @@ EOF
 function Build() {
     TARGET="$1"
     DIST_NAME="${DIST}/${DIST_NAME_PREFIX}${TARGET}"
-    CROSS_DIST_NAME="${DIST_NAME}-cross"
-    NATIVE_DIST_NAME="${DIST_NAME}-native"
+    CROSS_DIST_NAME="${DIST_NAME}-cross${DIST_NAME_SUFFIX}"
+    NATIVE_DIST_NAME="${DIST_NAME}-native${DIST_NAME_SUFFIX}"
     CROSS_LOG_FILE="${CROSS_DIST_NAME}.log"
     NATIVE_LOG_FILE="${NATIVE_DIST_NAME}.log"
 

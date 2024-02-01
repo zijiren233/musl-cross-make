@@ -23,11 +23,16 @@ XGCC_DIR = $(CURDIR)/obj_gcc/gcc
 XGCC = $(XGCC_DIR)/xgcc -B $(XGCC_DIR) -B $(CURDIR)/obj_sysroot/$(TARGET)/lib
 XCPP = $(XGCC_DIR)/cpp -B $(XGCC_DIR)
 XGXX = $(XGCC_DIR)/xg++
-XAR  = $(CURDIR)/obj_binutils/binutils/ar
-XAS  = $(CURDIR)/obj_binutils/gas/as-new
-XLD  = $(CURDIR)/obj_binutils/ld/ld-new
-XRANLIB  = $(CURDIR)/obj_binutils/binutils/ranlib
-XRC  = $(CURDIR)/obj_binutils/binutils/windres --preprocessor=$(XGCC_DIR)/xgcc --preprocessor-arg=-B --preprocessor-arg=$(XGCC_DIR) --preprocessor-arg=-I$(CURDIR)/obj_sysroot/$(TARGET)/include --preprocessor-arg=-E --preprocessor-arg=-xc-header --preprocessor-arg=-DRC_INVOKED -c 1252
+XAR = $(CURDIR)/obj_binutils/binutils/ar
+XAS = $(CURDIR)/obj_binutils/gas/as-new
+XLD = $(CURDIR)/obj_binutils/ld/ld-new
+XNM = $(CURDIR)/obj_binutils/binutils/nm-new
+XOBJCOPY = $(CURDIR)/obj_binutils/binutils/objcopy
+XOBJDUMP = $(CURDIR)/obj_binutils/binutils/objdump
+XRANLIB = $(CURDIR)/obj_binutils/binutils/ranlib
+XREADELF = $(CURDIR)/obj_binutils/binutils/readelf
+XSTRIP = $(CURDIR)/obj_binutils/binutils/strip-new
+XRC = $(CURDIR)/obj_binutils/binutils/windres --preprocessor=$(XGCC_DIR)/xgcc --preprocessor-arg=-B --preprocessor-arg=$(XGCC_DIR) --preprocessor-arg=-I$(CURDIR)/obj_sysroot/$(TARGET)/include --preprocessor-arg=-E --preprocessor-arg=-xc-header --preprocessor-arg=-DRC_INVOKED -c 1252
 DLLTOOL = $(CURDIR)/obj_binutils/binutils/dlltool
 LIBTOOL = $(CURDIR)/obj_binutils/binutils/libtool
 
@@ -239,25 +244,37 @@ FULL_GCC_CONFIG += --build=$(BUILD) --host=$(BUILD)
 GCC_MAKE_ARGS += AR_FOR_TARGET=$(XAR) \
 	AS_FOR_TARGET=$(XAS) \
 	LD_FOR_TARGET=$(XLD) \
-	NM_FOR_TARGET=$(CURDIR)/obj_binutils/binutils/nm-new \
-	OBJCOPY_FOR_TARGET=$(CURDIR)/obj_binutils/binutils/objcopy \
-	OBJDUMP_FOR_TARGET=$(CURDIR)/obj_binutils/binutils/objdump \
+	NM_FOR_TARGET=$(XNM) \
+	OBJCOPY_FOR_TARGET=$(XOBJCOPY) \
+	OBJDUMP_FOR_TARGET=$(XOBJDUMP) \
 	RANLIB_FOR_TARGET=$(XRANLIB) \
-	READELF_FOR_TARGET=$(CURDIR)/obj_binutils/binutils/readelf \
-	STRIP_FOR_TARGET=$(CURDIR)/obj_binutils/binutils/strip-new
+	READELF_FOR_TARGET=$(XREADELF) \
+	STRIP_FOR_TARGET=$(XSTRIP)
 FULL_MUSL_CONFIG += CC="$(XGCC)" \
 	LIBCC="../obj_gcc/$(TARGET)/libgcc/libgcc.a"
 MUSL_MAKE_ARGS = AR="$(XAR)" \
 	RANLIB="$(XRANLIB)"
-MINGW_MAKE_ARGS = AS="$(XAS)" AR="$(XAR)" RANLIB="$(XRANLIB)"
+
 FULL_MINGW_PTHREADS_CONFIG += RC="$(XRC)" CC="$(XGCC)" CXX="$(XGXX)" \
-	CPP="$(XCPP)" CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include -Wno-expansion-to-defined" \
+	CPP="$(XCPP)" CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include" \
 	LD="$(XLD)" LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib" \
-	DLLTOOL="$(DLLTOOL)"
+	DLLTOOL="$(DLLTOOL)" \
+	AS="$(XAS)" AR="$(XAR)" RANLIB="$(XRANLIB)" \
+	NM="$(XNM)" \
+	OBJCOPY="$(XOBJCOPY)" \
+	OBJDUMP="$(XOBJDUMP)" \
+	READELF="$(XREADELF)" \
+	STRIP="$(XSTRIP)"
 FULL_MINGW_CRT_CONFIG += RC="$(XRC)" CC="$(XGCC)" CXX="$(XGXX)" \
-	CPP="$(XCPP)" CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include -Wno-expansion-to-defined" \
+	CPP="$(XCPP)" CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include" \
 	LD="$(XLD)" LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib" \
-	DLLTOOL="$(DLLTOOL)"
+	DLLTOOL="$(DLLTOOL)" \
+	AS="$(XAS)" AR="$(XAR)" RANLIB="$(XRANLIB)" \
+	NM="$(XNM)" \
+	OBJCOPY="$(XOBJCOPY)" \
+	OBJDUMP="$(XOBJDUMP)" \
+	READELF="$(XREADELF)" \
+	STRIP="$(XSTRIP)"
 obj_mingw_headers/.lc_configured: | obj_binutils/.lc_built
 obj_mingw_crt/.lc_configured: | obj_sysroot/.lc_headers obj_gcc/gcc/.lc_built obj_binutils/.lc_built
 obj_mingw_pthreads/.lc_configured: | obj_sysroot/.lc_headers obj_gcc/gcc/.lc_built obj_binutils/.lc_built obj_sysroot/.lc_libs_crt

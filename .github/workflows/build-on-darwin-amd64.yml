@@ -1,15 +1,7 @@
 name: build-on-darwin-amd64
 
 on:
-  push:
-    branches: ["master"]
-  pull_request:
-    branches: ["master"]
   workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
 
 jobs:
   init:
@@ -50,7 +42,10 @@ jobs:
       - init
     strategy:
       matrix:
-        targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
+        # targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
+        targets:
+          - i686-w64-mingw32
+          - x86_64-w64-mingw32
         exclude:
           - targets: powerpc64le-linux-musl
           - targets: i486-w64-mingw32

@@ -52,7 +52,6 @@ jobs:
         targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
         exclude:
           - targets: powerpc64le-linux-musl
-          - targets: i486-w64-mingw32
     steps:
       - uses: actions/checkout@v4
 

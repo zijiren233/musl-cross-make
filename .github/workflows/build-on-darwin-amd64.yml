@@ -42,13 +42,9 @@ jobs:
       - init
     strategy:
       matrix:
-        # targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
-        targets:
-          - i686-w64-mingw32
-          - x86_64-w64-mingw32
+        targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
         exclude:
           - targets: powerpc64le-linux-musl
-          - targets: i486-w64-mingw32
     steps:
       - uses: actions/checkout@v4
 

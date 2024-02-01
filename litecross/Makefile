@@ -12,7 +12,7 @@ MINGW_HEADERS_CONFIG =
 MINGW_THREAD_MODEL = 
 TOOLCHAIN_CONFIG = 
 OPTIMIZE_LEVEL = 
-COMMON_FLAGS = -g0 -Wno-error
+COMMON_FLAGS = -g0 -Wno-error -w
 CC = gcc
 CXX = g++
 CFLAGS = 
@@ -256,7 +256,7 @@ MUSL_MAKE_ARGS = AR="$(XAR)" \
 	RANLIB="$(XRANLIB)"
 
 FULL_MINGW_PTHREADS_CONFIG += RC="$(XRC)" CC="$(XGCC)" CXX="$(XGXX)" \
-	CPP="$(XCPP)" CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include" \
+	CPP="$(XCPP)" CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include -w" \
 	LD="$(XLD)" LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib" \
 	DLLTOOL="$(DLLTOOL)" \
 	AS="$(XAS)" AR="$(XAR)" RANLIB="$(XRANLIB)" \
@@ -266,7 +266,7 @@ FULL_MINGW_PTHREADS_CONFIG += RC="$(XRC)" CC="$(XGCC)" CXX="$(XGXX)" \
 	READELF="$(XREADELF)" \
 	STRIP="$(XSTRIP)"
 FULL_MINGW_CRT_CONFIG += RC="$(XRC)" CC="$(XGCC)" CXX="$(XGXX)" \
-	CPP="$(XCPP)" CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include" \
+	CPP="$(XCPP)" CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include -w" \
 	LD="$(XLD)" LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib" \
 	DLLTOOL="$(DLLTOOL)" \
 	AS="$(XAS)" AR="$(XAR)" RANLIB="$(XRANLIB)" \

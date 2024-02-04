@@ -9,7 +9,7 @@ GMP_VER = 6.3.0
 MPC_VER = 1.3.1
 MPFR_VER = 4.2.1
 ISL_VER = 0.26
-LINUX_VER = 4.19.274
+LINUX_VER = 6.6.9
 MINGW_VER = v11.0.1
 CHINA = 
 
@@ -58,11 +58,11 @@ LINUX_HEADERS_SITE = https://ftp.barfooze.de/pub/sabotage/tarballs
 
 ifneq ($(findstring musl,$(TARGET)),)
 # musl
-MINGW_VER = 
+override MINGW_VER = 
 else
 # mingw
-MUSL_VER = 
-LINUX_VER = 
+override MUSL_VER = 
+override LINUX_VER = 
 endif
 
 SRC_DIRS = gcc-$(GCC_VER) binutils-$(BINUTILS_VER) \

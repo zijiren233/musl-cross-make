@@ -26,15 +26,6 @@ jobs:
           json="[${json%,}]"
           echo "TARGETS=$json" >> $GITHUB_OUTPUT
 
-      - name: Init sources
-        run: |
-          make extract_all
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: sources
-          path: sources
-
   build_targets_on_macos_amd64:
     name: Build
     runs-on: macos-13
@@ -47,11 +38,6 @@ jobs:
           - targets: powerpc64le-linux-musl
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: sources
-          path: sources
 
       - name: Init Dependencies
         run: |

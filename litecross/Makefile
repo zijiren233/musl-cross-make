@@ -23,18 +23,19 @@ XGCC_DIR = $(CURDIR)/obj_gcc/gcc
 XGCC = $(XGCC_DIR)/xgcc -B $(XGCC_DIR) -B $(CURDIR)/obj_sysroot/$(TARGET)/lib
 XCPP = $(XGCC_DIR)/cpp -B $(XGCC_DIR)
 XGXX = $(XGCC_DIR)/xg++
-XAR = $(CURDIR)/obj_binutils/binutils/ar
 XAS = $(CURDIR)/obj_binutils/gas/as-new
 XLD = $(CURDIR)/obj_binutils/ld/ld-new
-XNM = $(CURDIR)/obj_binutils/binutils/nm-new
-XOBJCOPY = $(CURDIR)/obj_binutils/binutils/objcopy
-XOBJDUMP = $(CURDIR)/obj_binutils/binutils/objdump
-XRANLIB = $(CURDIR)/obj_binutils/binutils/ranlib
-XREADELF = $(CURDIR)/obj_binutils/binutils/readelf
-XSTRIP = $(CURDIR)/obj_binutils/binutils/strip-new
-XRC = $(CURDIR)/obj_binutils/binutils/windres --preprocessor=$(XGCC_DIR)/xgcc --preprocessor-arg=-B --preprocessor-arg=$(XGCC_DIR) --preprocessor-arg=-I$(CURDIR)/obj_sysroot/$(TARGET)/include --preprocessor-arg=-E --preprocessor-arg=-xc-header --preprocessor-arg=-DRC_INVOKED -c 1252
-DLLTOOL = $(CURDIR)/obj_binutils/binutils/dlltool
-LIBTOOL = $(CURDIR)/obj_binutils/binutils/libtool
+XBINUTILS_DIR = $(CURDIR)/obj_binutils/binutils
+XAR = $(XBINUTILS_DIR)/ar
+XNM = $(XBINUTILS_DIR)/nm-new
+XOBJCOPY = $(XBINUTILS_DIR)/objcopy
+XOBJDUMP = $(XBINUTILS_DIR)/objdump
+XRANLIB = $(XBINUTILS_DIR)/ranlib
+XREADELF = $(XBINUTILS_DIR)/readelf
+XSTRIP = $(XBINUTILS_DIR)/strip-new
+XRC = $(XBINUTILS_DIR)/windres --preprocessor=$(XGCC_DIR)/xgcc --preprocessor-arg=-B --preprocessor-arg=$(XGCC_DIR) --preprocessor-arg=-I$(CURDIR)/obj_sysroot/$(TARGET)/include --preprocessor-arg=-E --preprocessor-arg=-xc-header --preprocessor-arg=-DRC_INVOKED -c 1252
+DLLTOOL = $(XBINUTILS_DIR)/dlltool
+LIBTOOL = $(XBINUTILS_DIR)/libtool
 
 -include config.mak
 
@@ -76,8 +77,8 @@ CROSS_CXX += $(STAT)
 LDFLAGS += $(STAT)
 endif
 
-CFLAGS := $(strip $(COMMON_FLAGS) $(CFLAGS))
-CXXFLAGS := $(strip $(COMMON_FLAGS) $(CXXFLAGS))
+override CFLAGS := $(strip $(COMMON_FLAGS) $(CFLAGS))
+override CXXFLAGS := $(strip $(COMMON_FLAGS) $(CXXFLAGS))
 
 ifeq ($(NATIVE),)
 # cross build
@@ -250,14 +251,16 @@ GCC_MAKE_ARGS += AR_FOR_TARGET=$(XAR) \
 	RANLIB_FOR_TARGET=$(XRANLIB) \
 	READELF_FOR_TARGET=$(XREADELF) \
 	STRIP_FOR_TARGET=$(XSTRIP)
-FULL_MUSL_CONFIG += CC="$(XGCC)" \
-	LIBCC="../obj_gcc/$(TARGET)/libgcc/libgcc.a"
-MUSL_MAKE_ARGS = AR="$(XAR)" \
-	RANLIB="$(XRANLIB)"
 
-FULL_MINGW_PTHREADS_CONFIG += RC="$(XRC)" CC="$(XGCC)" CXX="$(XGXX)" \
-	CPP="$(XCPP)" CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include -w" \
-	LD="$(XLD)" LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib" \
+FULL_MUSL_CONFIG += CC="$(XGCC)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
+	LIBCC="../obj_gcc/$(TARGET)/libgcc/libgcc.a" \
+	AR="$(XAR)" RANLIB="$(XRANLIB)"
+
+FULL_MINGW_PTHREADS_CONFIG += RC="$(XRC)" \
+	CC="$(XGCC)" CFLAGS="$(CFLAGS)" \
+	CXX="$(XGXX)" CXXFLAGS="$(CXXFLAGS)" \
+	CPP="$(XCPP)" CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include" \
+	LD="$(XLD)" LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib $(LDFLAGS)" \
 	DLLTOOL="$(DLLTOOL)" \
 	AS="$(XAS)" AR="$(XAR)" RANLIB="$(XRANLIB)" \
 	NM="$(XNM)" \
@@ -265,9 +268,11 @@ FULL_MINGW_PTHREADS_CONFIG += RC="$(XRC)" CC="$(XGCC)" CXX="$(XGXX)" \
 	OBJDUMP="$(XOBJDUMP)" \
 	READELF="$(XREADELF)" \
 	STRIP="$(XSTRIP)"
-FULL_MINGW_CRT_CONFIG += RC="$(XRC)" CC="$(XGCC)" CXX="$(XGXX)" \
-	CPP="$(XCPP)" CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include -w" \
-	LD="$(XLD)" LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib" \
+FULL_MINGW_CRT_CONFIG += RC="$(XRC)" \
+	CC="$(XGCC)" CFLAGS="$(CFLAGS)" \
+	CXX="$(XGXX)" CXXFLAGS="$(CXXFLAGS)" \
+	CPP="$(XCPP)" CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include" \
+	LD="$(XLD)" LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib $(LDFLAGS)" \
 	DLLTOOL="$(DLLTOOL)" \
 	AS="$(XAS)" AR="$(XAR)" RANLIB="$(XRANLIB)" \
 	NM="$(XNM)" \
@@ -308,9 +313,14 @@ override SYSROOT =
 
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(TARGET)
 FULL_GCC_CONFIG += --build=$(BUILD) --host=$(TARGET)
-FULL_MUSL_CONFIG += CC="$(CROSS_CC)"
-MUSL_MAKE_ARGS = 
-MINGW_MAKE_ARGS = 
+FULL_MUSL_CONFIG += CC="$(CROSS_CC)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)"
+
+FULL_MINGW_PTHREADS_CONFIG += CC="$(CROSS_CC)" CFLAGS="$(CFLAGS)" \
+	CXX="$(CROSS_CXX)" CXXFLAGS="$(CXXFLAGS)" \
+	LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib $(LDFLAGS)"
+FULL_MINGW_CRT_CONFIG += CC="$(CROSS_CC)" CFLAGS="$(CFLAGS)" \
+	CXX="$(CROSS_CXX)" CXXFLAGS="$(CXXFLAGS)" \
+	LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib $(LDFLAGS)"
 check-compiler:
 	@if ! command -v $(CROSS_CC) >/dev/null; then \
 		echo "$(CROSS_CC) not found in the environment"; \

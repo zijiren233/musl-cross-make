@@ -26,15 +26,6 @@ jobs:
           json="[${json%,}]"
           echo "TARGETS=$json" >> $GITHUB_OUTPUT
 
-      - name: Init sources
-        run: |
-          make extract_all
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: sources
-          path: sources
-
   build_targets_on_linux_riscv64_cross:
     name: Build cross
     runs-on: ubuntu-latest
@@ -45,11 +36,6 @@ jobs:
         targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: sources
-          path: sources
 
       - uses: uraimo/run-on-arch-action@v2
         name: Build
@@ -70,10 +56,15 @@ jobs:
               make \
               bison \
               rsync \
-              patch \
-              g++
+              patch
           run: |
             cd /build
+            unamespacer=$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)
+            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/latest/download/${{ matrix.targets }}-native-${unamespacer}.tgz"
+            NATIVE_COMPILER_STATUS=$(curl -sILo /dev/null -w "%{http_code}\n" $NATIVE_COMPILER)
+            if [ $NATIVE_COMPILER_STATUS -ne 200 ]; then apt install -y g++; else curl -sL "$NATIVE_COMPILER" | tar -zxf - -C "${{ matrix.targets }}-native" --strip-components 1; fi
+            chmod -R 0755 ${{ matrix.targets }}-native
+            export PATH="$PWD/${{ matrix.targets }}-native/bin:$PATH"
             bash scripts/build.sh \
                 -LO1 \
                 -T "${{ matrix.targets }}"
@@ -98,11 +89,6 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: sources
-          path: sources
-
-      - uses: actions/download-artifact@v4
-        with:
           name: ${{ matrix.targets }}-cross
           path: dist/${{ matrix.targets }}-cross
 
@@ -125,11 +111,16 @@ jobs:
               make \
               bison \
               rsync \
-              patch \
-              g++
+              patch
           run: |
             cd /build
             chmod -R 0755 dist
+            unamespacer=$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)
+            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/latest/download/${{ matrix.targets }}-native-${unamespacer}.tgz"
+            NATIVE_COMPILER_STATUS=$(curl -sILo /dev/null -w "%{http_code}\n" $NATIVE_COMPILER)
+            if [ $NATIVE_COMPILER_STATUS -ne 200 ]; then apt install -y g++; else curl -sL "$NATIVE_COMPILER" | tar -zxf - -C "${{ matrix.targets }}-native" --strip-components 1; fi
+            chmod -R 0755 ${{ matrix.targets }}-native
+            export PATH="$PWD/${{ matrix.targets }}-native/bin:$PATH"
             bash scripts/build.sh \
                 -NLO1 \
                 -T "${{ matrix.targets }}"

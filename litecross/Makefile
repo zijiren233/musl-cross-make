@@ -127,6 +127,10 @@ ifneq ($(findstring powerpc64,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-abi=elfv2 --with-cpu=970
 endif
 
+ifneq ($(findstring riscv64,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-abi=lp64
+endif
+
 ifneq ($(findstring mips64,$(TARGET))$(findstring mipsisa64,$(TARGET)),)
 ifneq ($(findstring n32,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-abi=n32

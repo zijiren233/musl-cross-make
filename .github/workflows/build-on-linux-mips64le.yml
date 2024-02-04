@@ -61,7 +61,7 @@ jobs:
           run: |
             cd /build
             unamespacer=$(uname -s | tr '[:upper:]' '[:lower:]')-mips64le
-            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/0.4.4/mips64el-linux-musl-native-${unamespacer}.tgz"
+            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/v0.4.4/mips64el-linux-musl-native-${unamespacer}.tgz"
             NATIVE_COMPILER_STATUS=$(curl -sILo /dev/null -w "%{http_code}\n" $NATIVE_COMPILER)
             if [ $NATIVE_COMPILER_STATUS -ne 200 ]; then apt install -y g++; else mkdir -p "mips64el-linux-musl-native" && curl -sL "$NATIVE_COMPILER" | tar -zxf - -C "mips64el-linux-musl-native" --strip-components 1 && chmod -R 0755 mips64el-linux-musl-native && export PATH="$PWD/mips64el-linux-musl-native/bin:$PATH"; fi
             bash scripts/build.sh \
@@ -116,7 +116,7 @@ jobs:
             cd /build
             chmod -R 0755 dist/${{ matrix.targets }}-cross
             unamespacer=$(uname -s | tr '[:upper:]' '[:lower:]')-mips64le
-            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/0.4.4/mips64el-linux-musl-native-${unamespacer}.tgz"
+            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/v0.4.4/mips64el-linux-musl-native-${unamespacer}.tgz"
             NATIVE_COMPILER_STATUS=$(curl -sILo /dev/null -w "%{http_code}\n" $NATIVE_COMPILER)
             if [ $NATIVE_COMPILER_STATUS -ne 200 ]; then apt install -y g++; else mkdir -p "mips64el-linux-musl-native" && curl -sL "$NATIVE_COMPILER" | tar -zxf - -C "mips64el-linux-musl-native" --strip-components 1 && chmod -R 0755 mips64el-linux-musl-native && export PATH="$PWD/mips64el-linux-musl-native/bin:$PATH"; fi
             bash scripts/build.sh \

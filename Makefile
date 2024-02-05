@@ -46,7 +46,7 @@ LINUX_SITE = https://cdn.kernel.org/pub/linux/kernel
 endif
 
 MUSL_SITE = https://musl.libc.org/releases
-MUSL_REPO = https://git.musl-libc.org/git/musl
+MUSL_REPO = https://git.musl-libc.org/cgit/musl
 GCC_SITE = $(GNU_SITE)/gcc
 BINUTILS_SITE = $(GNU_SITE)/binutils
 GMP_SITE = $(GNU_SITE)/gmp
@@ -77,10 +77,30 @@ SRC_DIRS = gcc-$(GCC_VER) binutils-$(BINUTILS_VER) \
 all:
 
 clean:
-	rm -rf gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-*
+	( cd $(CURDIR) && rm -rf gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-* )
+
+tmpclean:
+	( cd $(CURDIR) && \
+	find . -maxdepth 1 \( \
+    	-name "gcc-*" \
+    	-o -name "binutils-*" \
+    	-o -name "musl-*" \
+    	-o -name "gmp-*" \
+    	-o -name "mpc-*" \
+    	-o -name "mpfr-*" \
+    	-o -name "isl-*" \
+    	-o -name "build" \
+    	-o -name "build-*" \
+    	-o -name "linux-*" \
+    	-o -name "mingw-w64-*" \
+	\) \
+	! -name "*.orig" \
+	-type d \
+	-exec echo rm -rf {} \; \
+	-exec rm -rf {} + )
 
 distclean: clean
-	rm -rf sources
+	( cd $(CURDIR) && rm -rf sources )
 
 check:
 	@echo "check bzip2"
@@ -191,7 +211,7 @@ musl-git-%:
 	case "$@" in */*) exit 1 ;; esac
 	rm -rf $@.tmp
 	mkdir $@.tmp
-	( cd $@.tmp && $(COWPATCH) -I ../$< )
+	( cd $@.tmp && $(COWPATCH) -C ../$< )
 	if [ -d patches/$@ ] && [ -n "$(shell find patches/$@ -type f)" ]; then \
 		if [ -z "$(findstring mingw,$(TARGET))" ]; then \
 			cat $(filter-out %-mingw.diff,$(wildcard patches/$@/*)) | ( cd $@.tmp && $(COWPATCH) -p1 ); \

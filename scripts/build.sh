@@ -300,7 +300,7 @@ function Build() {
     if [ ! "$ONLY_NATIVE_BUILD" ]; then
         echo "build cross ${DIST_NAME_PREFIX}${TARGET} to ${CROSS_DIST_NAME}"
         rm -rf "${CROSS_DIST_NAME}" "${CROSS_LOG_FILE}"
-        $MAKE clean
+        $MAKE tmpclean
         {
             OUTPUT="${CROSS_DIST_NAME}"
             NATIVE=""
@@ -336,7 +336,7 @@ function Build() {
     if [ "$NATIVE_BUILD" ]; then
         echo "build native ${DIST_NAME_PREFIX}${TARGET} to ${NATIVE_DIST_NAME}"
         rm -rf "${NATIVE_DIST_NAME}" "${NATIVE_LOG_FILE}"
-        $MAKE clean
+        $MAKE tmpclean
         {
             OUTPUT="${NATIVE_DIST_NAME}"
             NATIVE="true"

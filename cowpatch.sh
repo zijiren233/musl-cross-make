@@ -100,10 +100,14 @@ EOF
 }
 
 gotcmd=0
-while getopts ":p:i:RNEI:S:" opt; do
+while getopts ":p:i:RNEI:C:S:" opt; do
     case "$opt" in
     I)
         find "$OPTARG" -path "$OPTARG/*" -prune -exec sh -c 'ln -sf "$@" .' sh {} +
+        gotcmd=1
+        ;;
+    C)
+        cp -a "$OPTARG"/* .
         gotcmd=1
         ;;
     S)

@@ -52,6 +52,7 @@ jobs:
             make \
             gnu-sed \
             gawk \
+            gpatch \
             coreutils \
             findutils
 

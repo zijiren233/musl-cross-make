@@ -74,6 +74,14 @@ function Init() {
             sleep 3
         fi
 
+        if [ -z "$(patch -v | grep "GNU patch")" ]; then
+            echo "Warn: patch not gnu version"
+            echo "Warn: when patch is not gnu version, it may cause build error"
+            echo "Warn: you can install gpatch with brew"
+            echo "Warn: brew install gpatch"
+            sleep 3
+        fi
+
         if [ -x "$(command -v gdate)" ]; then
             DATE_PATH="$(command -v gdate)"
             ln -s "$DATE_PATH" "$TMP_BIN_DIR/date"

@@ -9,7 +9,6 @@ COMMON_CONFIG =
 GCC_CONFIG = 
 MINGW_CRT_CONFIG = 
 MINGW_HEADERS_CONFIG = 
-MINGW_THREAD_MODEL = 
 TOOLCHAIN_CONFIG = 
 OPTIMIZE_LEVEL = 
 COMMON_FLAGS = -g0 -Wno-error -w
@@ -74,7 +73,6 @@ CC += $(STAT)
 CXX += $(STAT)
 CROSS_CC += $(STAT)
 CROSS_CXX += $(STAT)
-LDFLAGS += $(STAT)
 endif
 
 override CFLAGS := $(strip $(COMMON_FLAGS) $(CFLAGS))
@@ -88,7 +86,7 @@ else
 COMPILER_ARGS += CC="$(CROSS_CC)" CXX="$(CROSS_CXX)"
 endif
 COMMON_CONFIG := $(COMPILER_ARGS) \
-	CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" \
+	CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(strip $(STAT) $(LDFLAGS))" \
 	$(COMMON_CONFIG)
 COMMON_MAKE_ARGS += CC_FOR_BUILD="$(CC)" CXX_FOR_BUILD="$(CXX)"
 
@@ -153,11 +151,8 @@ endif
 
 ifneq ($(findstring mingw,$(TARGET)),)
 # mingw
-ifeq ($(MINGW_THREAD_MODEL),)
-override MINGW_THREAD_MODEL = win32
-endif
 GCC_CONFIG_FOR_TARGET += --disable-sjlj-exceptions \
-	--enable-threads=$(MINGW_THREAD_MODEL)
+	--enable-threads=posix
 ifneq ($(findstring x86_64,$(TARGET)),)
 # 64
 MINGW_CRT_CONFIG += --disable-lib32 --enable-lib64
@@ -284,23 +279,19 @@ FULL_MINGW_CRT_CONFIG += RC="$(XRC)" \
 	OBJDUMP="$(XOBJDUMP)" \
 	READELF="$(XREADELF)" \
 	STRIP="$(XSTRIP)"
-obj_mingw_headers/.lc_configured: | obj_binutils/.lc_built
+
+obj_gcc/.lc_built: | obj_sysroot/.lc_libs obj_sysroot/.lc_headers
+obj_gcc/.lc_configured: obj_binutils/.lc_built
+ifneq ($(MINGW_SRCDIR),)
+# mingw
 obj_mingw_crt/.lc_configured: | obj_sysroot/.lc_headers obj_gcc/gcc/.lc_built obj_binutils/.lc_built
 obj_mingw_pthreads/.lc_configured: | obj_sysroot/.lc_headers obj_gcc/gcc/.lc_built obj_binutils/.lc_built obj_sysroot/.lc_libs_crt
-obj_musl/.lc_configured: | obj_gcc/gcc/.lc_built
-obj_musl/.lc_built: | obj_gcc/$(TARGET)/libgcc/libgcc.a
-ifneq ($(MUSL_SRCDIR),)
+obj_gcc/gcc/.lc_built: obj_sysroot/.lc_headers | obj_sysroot/usr obj_sysroot/lib32 obj_sysroot/lib64 obj_sysroot/include
+else
 # musl
-obj_gcc/.lc_built: | obj_sysroot/.lc_libs obj_sysroot/.lc_headers
-else
-# # mingw
-ifeq ($(MINGW_THREAD_MODEL),posix)
-obj_gcc/.lc_built: | obj_sysroot/.lc_libs obj_sysroot/.lc_headers
-else
-obj_gcc/.lc_built: | obj_sysroot/.lc_libs_crt obj_sysroot/.lc_headers
+obj_musl/.lc_configured: | obj_gcc/gcc/.lc_built
+obj_musl/.lc_built: obj_gcc/$(TARGET)/libgcc/libgcc.a
 endif
-endif
-obj_gcc/.lc_configured: obj_binutils/.lc_built
 check-compiler:
 	@if ! command -v $(CC) >/dev/null; then \
 		echo "$(CC) not found in the environment"; \
@@ -325,6 +316,7 @@ FULL_MINGW_PTHREADS_CONFIG += CC="$(CROSS_CC)" CFLAGS="$(CFLAGS)" \
 FULL_MINGW_CRT_CONFIG += CC="$(CROSS_CC)" CFLAGS="$(CFLAGS)" \
 	CXX="$(CROSS_CXX)" CXXFLAGS="$(CXXFLAGS)" \
 	LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib $(LDFLAGS)"
+obj_gcc/gcc/.lc_built: obj_sysroot/.lc_headers | obj_sysroot/usr obj_sysroot/lib32 obj_sysroot/lib64 obj_sysroot/include
 check-compiler:
 	@if ! command -v $(CROSS_CC) >/dev/null; then \
 		echo "$(CROSS_CC) not found in the environment"; \
@@ -457,14 +449,6 @@ obj_gcc/.lc_mpc_built: | obj_gcc/.lc_mpfr_built
 	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_STATIC_MAKE_ARGS)" all-mpc
 	touch $@
 
-ifneq ($(NATIVE)$(MINGW_SRCDIR),)
-# native build or mingw on build xgcc need headers
-obj_gcc/gcc/.lc_built: obj_sysroot/.lc_headers | obj_sysroot/usr obj_sysroot/lib32 obj_sysroot/lib64 obj_sysroot/include
-else
-# cross build and musl on build xgcc does not need headers
-# but on all-target-libgcc need headers
-obj_gcc/$(TARGET)/libgcc/libgcc.a: | obj_sysroot/usr obj_sysroot/lib32 obj_sysroot/lib64 obj_sysroot/include
-endif
 obj_gcc/gcc/.lc_built: | obj_gcc/.lc_mpc_built
 	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)" all-gcc
 	touch $@
@@ -488,7 +472,7 @@ obj_sysroot/.lc_headers: | obj_musl/.lc_configured obj_sysroot
 	touch $@
 endif
 
-obj_gcc/$(TARGET)/libgcc/libgcc.a: | obj_sysroot/.lc_headers
+obj_gcc/$(TARGET)/libgcc/libgcc.a: obj_sysroot/.lc_headers | obj_sysroot/usr obj_sysroot/lib32 obj_sysroot/lib64 obj_sysroot/include
 	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) enable_shared=no $(TOOLCHAIN_MAKE_ARGS)" all-target-libgcc
 
 obj_musl/.lc_built: | obj_musl/.lc_configured
@@ -579,7 +563,7 @@ src_kernel_headers: | $(LINUX_SRCDIR)
 	ln -sf "$(LINUX_SRCDIR)" $@
 obj_kernel_headers/.lc_built: | src_kernel_headers
 	mkdir -p $(CURDIR)/obj_kernel_headers/staged
-	cd src_kernel_headers && $(MAKE) $(MAKE_ARGS) ARCH=$(LINUX_ARCH) O=$(CURDIR)/obj_kernel_headers INSTALL_HDR_PATH=$(CURDIR)/obj_kernel_headers/staged headers_install HOSTCC="$(CC)"
+	cd src_kernel_headers && $(MAKE) $(MAKE_ARGS) ARCH=$(LINUX_ARCH) O=$(CURDIR)/obj_kernel_headers INSTALL_HDR_PATH=$(CURDIR)/obj_kernel_headers/staged HOSTCC="$(CC)" headers_install
 	find obj_kernel_headers/staged/include '(' -name .install -o -name ..install.cmd ')' -exec rm {} +
 	touch $@
 install-kernel-headers: | obj_kernel_headers/.lc_built

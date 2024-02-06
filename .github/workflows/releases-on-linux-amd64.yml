@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       TARGETS: ${{ steps.get_all_targets.outputs.TARGETS }}
-      VERSION: ${{ steps.get_version.outputs.VERSION }}
     steps:
       - uses: actions/checkout@v4
 
@@ -28,10 +27,6 @@ jobs:
           printf -v json '"%s",' "${arr[@]}"
           json="[${json%,}]"
           echo "TARGETS=$json" >> $GITHUB_OUTPUT
-
-      - name: Get version
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_OUTPUT
 
   build_targets_on_linux_amd64:
     name: Build
@@ -69,7 +64,6 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ needs.init.outputs.VERSION }}
           draft: false
           prerelease: false
           append_body: false

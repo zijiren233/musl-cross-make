@@ -57,7 +57,8 @@ jobs:
               make \
               bison \
               rsync \
-              patch
+              patch \
+              perl
           run: |
             cd /build
             unamespacer=$(uname -s | tr '[:upper:]' '[:lower:]')-mips64le
@@ -111,7 +112,8 @@ jobs:
               make \
               bison \
               rsync \
-              patch
+              patch \
+              perl
           run: |
             cd /build
             chmod -R 0755 dist/${{ matrix.targets }}-cross

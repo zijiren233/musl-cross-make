@@ -280,11 +280,6 @@ DISABLE_NATIVE_STATIC_BUILD = ${DISABLE_NATIVE_STATIC_BUILD}
 
 SIMPLER_BUILD = ${SIMPLER_BUILD}
 
-ifeq (\$(shell uname),Darwin)
-# fix isl 0.25+ isl_test_cpp17 error
-CXX += -std=gnu++17
-endif
-
 COMMON_CONFIG += --with-debug-prefix-map=\$(CURDIR)= --enable-compressed-debug-sections=none
 EOF
 }

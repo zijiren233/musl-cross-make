@@ -39,6 +39,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Init
+        run: |
+          apt update && apt install -y perl
+
       - name: Build
         id: build
         run: |

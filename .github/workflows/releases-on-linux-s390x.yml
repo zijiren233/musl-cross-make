@@ -58,7 +58,8 @@ jobs:
               make \
               bison \
               rsync \
-              patch
+              patch \
+              perl
           run: |
             cd /build
             unamespacer=$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)
@@ -129,7 +130,8 @@ jobs:
               make \
               bison \
               rsync \
-              patch
+              patch \
+              perl
           run: |
             cd /build
             unamespacer=$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)

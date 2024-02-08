@@ -34,8 +34,6 @@ jobs:
     strategy:
       matrix:
         targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
-        exclude:
-          - targets: powerpc64le-linux-musl
     steps:
       - uses: actions/checkout@v4
 
@@ -47,12 +45,15 @@ jobs:
             gawk \
             gpatch \
             coreutils \
-            findutils
+            findutils \
+            gcc@13 \
+            perl
 
       - name: Build
         run: |
           bash scripts/build.sh \
             -sLO1 \
+            -c "gcc-13" -x "g++-13" \
             -T "${{ matrix.targets }}"
 
       - name: Upload ${{ matrix.targets }} cross

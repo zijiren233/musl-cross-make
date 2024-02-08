@@ -32,6 +32,7 @@ jobs:
     needs:
       - init
     strategy:
+      fail-fast: false
       matrix:
         targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
     steps:

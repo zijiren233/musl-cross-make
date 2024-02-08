@@ -34,6 +34,7 @@ jobs:
     needs:
       - init
     strategy:
+      fail-fast: false
       matrix:
         targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
     steps:
@@ -102,6 +103,7 @@ jobs:
       - init
       - build_targets_on_linux_mips64le_cross
     strategy:
+      fail-fast: false
       matrix:
         targets: ${{ fromJSON(needs.init.outputs.TARGETS) }}
     steps:

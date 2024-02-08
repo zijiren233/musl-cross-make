@@ -61,7 +61,7 @@ jobs:
           run: |
             cd /build
             unamespacer=$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)
-            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/v0.4.0/riscv64-linux-musl-native-${unamespacer}.tgz"
+            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/v0.4.1/riscv64-linux-musl-native-${unamespacer}.tgz"
             NATIVE_COMPILER_STATUS=$(curl -sILo /dev/null -w "%{http_code}\n" $NATIVE_COMPILER)
             if [ $NATIVE_COMPILER_STATUS -ne 200 ]; then apt install -y g++; else mkdir -p "riscv64-linux-musl-native" && curl -sL "$NATIVE_COMPILER" | tar -zxf - -C "riscv64-linux-musl-native" --strip-components 1 && chmod -R 0755 riscv64-linux-musl-native && export PATH="$PWD/riscv64-linux-musl-native/bin:$PATH"; fi
             bash scripts/build.sh \
@@ -116,7 +116,7 @@ jobs:
             cd /build
             chmod -R 0755 dist/${{ matrix.targets }}-cross
             unamespacer=$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)
-            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/v0.4.0/riscv64-linux-musl-native-${unamespacer}.tgz"
+            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/v0.4.1/riscv64-linux-musl-native-${unamespacer}.tgz"
             NATIVE_COMPILER_STATUS=$(curl -sILo /dev/null -w "%{http_code}\n" $NATIVE_COMPILER)
             if [ $NATIVE_COMPILER_STATUS -ne 200 ]; then apt install -y g++; else mkdir -p "riscv64-linux-musl-native" && curl -sL "$NATIVE_COMPILER" | tar -zxf - -C "riscv64-linux-musl-native" --strip-components 1 && chmod -R 0755 riscv64-linux-musl-native && export PATH="$PWD/riscv64-linux-musl-native/bin:$PATH"; fi
             bash scripts/build.sh \

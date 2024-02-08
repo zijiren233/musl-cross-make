@@ -101,42 +101,75 @@ endif
 ifneq ($(findstring musl,$(TARGET)),)
 # musl
 override MINGW_SRCDIR = 
-else
-# mingw
-override MUSL_SRCDIR = 
-override LINUX_SRCDIR = 
-endif
+
+GCC_CONFIG_FOR_TARGET += --enable-initfini-array
 
 ifneq ($(findstring fdpic,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --enable-fdpic
 endif
 
-ifneq ($(filter x86_64%x32,$(TARGET)),)
-GCC_CONFIG_FOR_TARGET += --with-abi=x32
+ifneq ($(filter i486%,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-arch=i486 --with-tune=generic --enable-cld
+endif
+ifneq ($(filter i586%,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-arch=pentium-m --with-fpmath=sse --with-tune=generic --enable-cld
+endif
+ifneq ($(filter i686%,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-arch=i686 --with-tune=generic --enable-cld
 endif
 
-# ifneq ($(findstring microblaze,$(TARGET)),)
-# ICE in GCC; temporarily disable gfortran support.
-# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=87438
-# GCC_CONFIG_FOR_TARGET += --enable-languages=c,c++
-# endif
-
-ifneq ($(findstring powerpc64,$(TARGET)),)
-GCC_CONFIG_FOR_TARGET += --with-abi=elfv2 --with-cpu=970
+ifneq ($(filter aarch64%,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-arch=armv8-a --with-abi=lp64
+endif
+ifneq ($(filter armv5%eabi,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-arch=armv5te --with-tune=arm926ej-s --with-abi=aapcs-linux
+else
+ifneq ($(filter armv6%eabi,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-arch=armv6kz --with-tune=arm1176jzf-s --with-abi=aapcs-linux
+ifneq ($(filter %hf,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-fpu=vfpv2
+endif
+else
+ifneq ($(filter armv7%eabi,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-arch=armv7-a --with-tune=generic-armv7-a --with-abi=aapcs-linux --with-mode=thumb
+ifneq ($(filter %hf,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-fpu=vfpv3-d16
+endif
+endif
+endif
 endif
 
-ifneq ($(findstring mips64,$(TARGET))$(findstring mipsisa64,$(TARGET)),)
-ifneq ($(findstring n32,$(TARGET)),)
+ifneq ($(filter powerpc%,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --enable-secureplt
+ifneq ($(findstring 64,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-abi=elfv2 --enable-targets=powerpcle-linux
+endif
+endif
+
+ifneq ($(filter mips%,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-linker-hash-style=sysv --with-mips-plt
+ifneq ($(findstring 64,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-arch=mips3 --with-tune=mips64 --with-abi=64
+else
+GCC_CONFIG_FOR_TARGET += --with-arch=mips32 --with-abi=32
+endif
+endif
+
+ifneq ($(filter s390x%,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-arch=z196 --with-tune=zEC12 --with-zarch --with-long-double-128
+endif
+
+ifneq ($(filter riscv64%,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-arch=rv64gc --with-abi=lp64d
+endif
+
+ifneq ($(filter %n32,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-abi=n32
 else
-GCC_CONFIG_FOR_TARGET += --with-abi=64
+ifneq ($(filter %x32,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-abi=x32
 endif
 endif
-
-ifneq ($(findstring s390x,$(TARGET)),)
-GCC_CONFIG_FOR_TARGET += --with-long-double-128
-endif
-
 ifneq ($(filter %sf,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-float=soft
 else
@@ -145,8 +178,11 @@ GCC_CONFIG_FOR_TARGET += --with-float=hard
 endif
 endif
 
-ifneq ($(findstring mingw,$(TARGET)),)
+else
 # mingw
+override MUSL_SRCDIR = 
+override LINUX_SRCDIR = 
+
 GCC_CONFIG_FOR_TARGET += --disable-sjlj-exceptions \
 	--enable-threads=posix
 ifneq ($(findstring x86_64,$(TARGET)),)
@@ -154,23 +190,9 @@ ifneq ($(findstring x86_64,$(TARGET)),)
 MINGW_CRT_CONFIG += --disable-lib32 --enable-lib64
 else
 MINGW_CRT_CONFIG += --enable-lib32 --disable-lib64
+GCC_CONFIG_FOR_TARGET += --disable-tls
 endif
 
-else
-# musl
-GCC_CONFIG_FOR_TARGET += --enable-initfini-array
-# # https://wiki.musl-libc.org/getting-started.html#Notes_on_ARM_Float_Mode
-# ifneq ($(findstring armv5,$(TARGET)),)
-# GCC_CONFIG_FOR_TARGET += --with-arch=armv5te --with-fpu=vfp
-# else
-# ifneq ($(findstring armv6,$(TARGET)),)
-# GCC_CONFIG_FOR_TARGET += --with-arch=armv6 --with-fpu=vfpv2
-# else
-# ifneq ($(findstring armv7,$(TARGET)),)
-# GCC_CONFIG_FOR_TARGET += --with-arch=armv7-a --with-fpu=vfpv3
-# endif
-# endif
-# endif
 endif
 
 MAKE += MULTILIB_OSDIRNAMES=
@@ -183,26 +205,29 @@ COMMON_CONFIG := --target=$(TARGET) --prefix= \
 	--disable-werror \
 	--disable-multilib \
 	--disable-bootstrap \
-	--enable-deterministic-archives \
 	--disable-nls \
-	--enable-lto \
 	--with-zstd=no \
+	--enable-lto \
+	--enable-tls \
+	--enable-deterministic-archives \
 	$(COMMON_CONFIG)
 
 GCC_CONFIG := --enable-languages=c,c++ \
 	--disable-libmudflap --disable-libsanitizer \
 	--disable-gnu-indirect-function \
-	--disable-libmpx \
-	--enable-libstdcxx-time=yes \
+	--disable-libmpx --disable-fixed-point \
+	--enable-libstdcxx-time=yes --disable-libstdcxx-pch \
+	--disable-libquadmath --disable-libquadmath-support \
 	--enable-libstdcxx-filesystem-ts=yes \
 	--enable-default-pie --enable-static-pie \
 	--disable-decimal-float \
 	$(GCC_CONFIG)
 
+BINUTILS_CONFIG := --disable-gprofng \
+	$(BINUTILS_CONFIG)
+
 ifneq ($(SIMPLER_BUILD),)
-COMMON_CONFIG += --disable-libquadmath \
-	--disable-libquadmath-support \
-	--disable-lto
+COMMON_CONFIG += --disable-lto
 endif
 
 FULL_BINUTILS_CONFIG = $(COMMON_CONFIG) $(BINUTILS_CONFIG) $(TOOLCHAIN_CONFIG)

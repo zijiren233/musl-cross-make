@@ -254,8 +254,6 @@ OUTPUT = ${OUTPUT}
 GCC_VER = ${GCC_VER}
 MUSL_VER = ${MUSL_VER}
 BINUTILS_VER = ${BINUTILS_VER}
-# \`--disable-gprofng\` fix gprofng: unknown type name off64_t in \`binutils version 2.38+\`
-BINUTILS_CONFIG += --disable-gprofng
 
 GMP_VER = ${GMP_VER}
 MPC_VER = ${MPC_VER}
@@ -380,41 +378,28 @@ function Build() {
 }
 
 ALL_TARGETS='aarch64-linux-musl
-arm-linux-musleabi
-arm-linux-musleabihf
 armv5-linux-musleabi
-armv5-linux-musleabihf
 armv6-linux-musleabi
 armv6-linux-musleabihf
 armv7-linux-musleabi
 armv7-linux-musleabihf
-i486-linux-musl
-i686-linux-musl
+loongarch64-linux-musl
 mips-linux-musl
-mips-linux-musln32
 mips-linux-muslsf
-mips-linux-musln32sf
 mipsel-linux-musl
-mipsel-linux-musln32
 mipsel-linux-muslsf
-mipsel-linux-musln32sf
 mips64-linux-musl
-mips64-linux-musln32
-mips64-linux-musln32sf
+mips64-linux-muslsf
 mips64el-linux-musl
-mips64el-linux-musln32
-mips64el-linux-musln32sf
-powerpc-linux-musl
-powerpc-linux-muslsf
-powerpcle-linux-musl
-powerpcle-linux-muslsf
+mips64el-linux-muslsf
 powerpc64-linux-musl
 powerpc64le-linux-musl
 riscv64-linux-musl
 s390x-linux-musl
+i586-linux-musl
+i686-linux-musl
 x86_64-linux-musl
-x86_64-linux-muslx32
-i486-w64-mingw32
+i586-w64-mingw32
 i686-w64-mingw32
 x86_64-w64-mingw32'
 

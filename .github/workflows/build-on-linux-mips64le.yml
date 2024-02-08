@@ -3,6 +3,10 @@ name: build-on-linux-mips64le
 on:
   workflow_dispatch:
 
+env:
+  USE_NATIVE_VERSION: v0.4.1
+  UNAMESPACER: linux-mips64le
+
 jobs:
   init:
     name: Init
@@ -62,8 +66,7 @@ jobs:
               perl
           run: |
             cd /build
-            unamespacer=$(uname -s | tr '[:upper:]' '[:lower:]')-mips64le
-            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/v0.4.1/mips64el-linux-musl-native-${unamespacer}.tgz"
+            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/${{ github.env.USE_NATIVE_VERSION }}/mips64el-linux-musl-native-${{ github.env.UNAMESPACER }}.tgz"
             NATIVE_COMPILER_STATUS=$(curl -sILo /dev/null -w "%{http_code}\n" $NATIVE_COMPILER)
             if [ $NATIVE_COMPILER_STATUS -ne 200 ]; then apt install -y g++; else mkdir -p "mips64el-linux-musl-native" && curl -sL "$NATIVE_COMPILER" | tar -zxf - -C "mips64el-linux-musl-native" --strip-components 1 && chmod -R 0755 mips64el-linux-musl-native && export PATH="$PWD/mips64el-linux-musl-native/bin:$PATH"; fi
             bash scripts/build.sh \
@@ -119,8 +122,7 @@ jobs:
           run: |
             cd /build
             chmod -R 0755 dist/${{ matrix.targets }}-cross
-            unamespacer=$(uname -s | tr '[:upper:]' '[:lower:]')-mips64le
-            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/v0.4.1/mips64el-linux-musl-native-${unamespacer}.tgz"
+            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/${{ github.env.USE_NATIVE_VERSION }}/mips64el-linux-musl-native-${{ github.env.UNAMESPACER }}.tgz"
             NATIVE_COMPILER_STATUS=$(curl -sILo /dev/null -w "%{http_code}\n" $NATIVE_COMPILER)
             if [ $NATIVE_COMPILER_STATUS -ne 200 ]; then apt install -y g++; else mkdir -p "mips64el-linux-musl-native" && curl -sL "$NATIVE_COMPILER" | tar -zxf - -C "mips64el-linux-musl-native" --strip-components 1 && chmod -R 0755 mips64el-linux-musl-native && export PATH="$PWD/mips64el-linux-musl-native/bin:$PATH"; fi
             bash scripts/build.sh \

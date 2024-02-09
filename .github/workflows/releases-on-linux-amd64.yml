@@ -32,6 +32,16 @@ jobs:
           json="[${json%,}]"
           echo "TARGETS=$json" >> $GITHUB_OUTPUT
 
+      - name: Download sources
+        run: |
+          bash scripts/build.sh -d
+
+      - name: Upload sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: sources
+          path: sources
+
   build_targets_on_linux_amd64:
     name: Build
     runs-on: ubuntu-latest
@@ -48,10 +58,15 @@ jobs:
         run: |
           apt update && apt install -y perl
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: sources
+          path: sources
+
       - name: Build
         id: build
         run: |
-          NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/${{ github.env.USE_NATIVE_VERSION }}/x86_64-linux-musl-native-${{ github.env.UNAMESPACER }}.tgz"
+          NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/${{ github.env.USE_NATIVE_VERSION }}/x86_64-linux-musl-native-${{ env.UNAMESPACER }}.tgz"
           NATIVE_COMPILER_STATUS=$(curl -sILo /dev/null -w "%{http_code}\n" $NATIVE_COMPILER)
           if [ $NATIVE_COMPILER_STATUS -eq 200 ]; then mkdir -p "x86_64-linux-musl-native" && curl -sL "$NATIVE_COMPILER" | tar -zxf - -C "x86_64-linux-musl-native" --strip-components 1 && chmod -R 0755 x86_64-linux-musl-native && export PATH="$PWD/x86_64-linux-musl-native/bin:$PATH"; fi
           bash scripts/build.sh \
@@ -61,10 +76,10 @@ jobs:
       - name: Archive
         run: |
           mkdir -p archive
-          tar -zcvf archive/${{ matrix.targets }}-cross-${{ github.env.UNAMESPACER }}.tgz \
+          tar -zcvf archive/${{ matrix.targets }}-cross-${{ env.UNAMESPACER }}.tgz \
             -C dist/${{ matrix.targets }}-cross \
             .
-          tar -zcvf archive/${{ matrix.targets }}-native-${{ github.env.UNAMESPACER }}.tgz \
+          tar -zcvf archive/${{ matrix.targets }}-native-${{ env.UNAMESPACER }}.tgz \
             -C dist/${{ matrix.targets }}-native \
             .
 

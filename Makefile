@@ -27,7 +27,13 @@ REL_TOP = ../../..
 
 -include config.mak
 
+MUSL_REPO = https://git.musl-libc.org/cgit/musl
+
+LINUX_HEADERS_SITE = https://ftp.barfooze.de/pub/sabotage/tarballs
+
 ifneq ($(CHINA),)
+MUSL_SITE = https://sources.buildroot.net/musl
+
 GNU_SITE = https://mirrors.ustc.edu.cn/gnu
 
 SOURCEFORGE_MIRROT = https://jaist.dl.sourceforge.net
@@ -35,7 +41,11 @@ SOURCEFORGE_MIRROT = https://jaist.dl.sourceforge.net
 GCC_SNAP = https://mirrors.tuna.tsinghua.edu.cn/sourceware/gcc/snapshots
 
 LINUX_SITE = https://mirrors.ustc.edu.cn/kernel.org/linux/kernel
+
+ISL_SITE = https://sources.buildroot.net/isl
 else
+MUSL_SITE = https://musl.libc.org/releases
+
 GNU_SITE = https://ftp.gnu.org/gnu
 
 SOURCEFORGE_MIRROT = https://downloads.sourceforge.net
@@ -44,9 +54,6 @@ GCC_SNAP = https://sourceware.org/pub/gcc/snapshots
 
 LINUX_SITE = https://cdn.kernel.org/pub/linux/kernel
 endif
-
-MUSL_SITE = https://musl.libc.org/releases
-MUSL_REPO = https://git.musl-libc.org/cgit/musl
 GCC_SITE = $(GNU_SITE)/gcc
 BINUTILS_SITE = $(GNU_SITE)/binutils
 GMP_SITE = $(GNU_SITE)/gmp
@@ -54,7 +61,6 @@ MPC_SITE = $(GNU_SITE)/mpc
 MPFR_SITE = $(GNU_SITE)/mpfr
 ISL_SITE = $(SOURCEFORGE_MIRROT)/project/libisl
 MINGW_SITE = $(SOURCEFORGE_MIRROT)/project/mingw-w64/mingw-w64/mingw-w64-release
-LINUX_HEADERS_SITE = https://ftp.barfooze.de/pub/sabotage/tarballs
 
 ifneq ($(findstring musl,$(TARGET)),)
 # musl
@@ -207,6 +213,11 @@ musl-git-%:
 	mv $@.tmp/$(patsubst %.orig,%,$@) $@
 	rm -rf $@.tmp
 
+define find_and_prefix
+$(addprefix $(SOURCES)/,$(notdir $(wildcard hashes/\$1*.sha1)))
+endef
+
+ifeq ($(SOURCES_ONLY),)
 %: %.orig | $(SOURCES)/config.sub $(SOURCES)/config.guess
 	case "$@" in */*) exit 1 ;; esac
 	rm -rf $@.tmp
@@ -226,11 +237,12 @@ musl-git-%:
 	rm -rf $@
 	mv $@.tmp $@
 	$(COWPATCH) -S gcc-$(GCC_VER)/libstdc++-v3
-
+extract_all: | $(SRC_DIRS)
+else
+extract_all: | $(patsubst %.sha1,%, $(foreach item,$(SRC_DIRS),$(call find_and_prefix,$(item)))) $(SOURCES)/config.sub $(SOURCES)/config.guess
+endif
 # Add deps for all patched source dirs on their patchsets
 $(foreach dir,$(notdir $(basename $(basename $(basename $(wildcard hashes/*))))),$(eval $(dir): $$(wildcard patches/$(dir) patches/$(dir)/*)))
-
-extract_all: | $(SRC_DIRS)
 
 # Rules for building.
 

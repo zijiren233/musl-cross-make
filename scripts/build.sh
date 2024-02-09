@@ -160,10 +160,11 @@ function Help() {
     echo "-p: dist name prefix"
     echo "-u: dist name suffix"
     echo "-i: simpler build"
+    echo "-d: download sources only"
 }
 
 function ParseArgs() {
-    while getopts "hatT:Cc:x:nLlO:j:sSNp:u:i" arg; do
+    while getopts "hatT:Cc:x:nLlO:j:sSNp:u:id" arg; do
         case $arg in
         h)
             Help
@@ -226,6 +227,9 @@ function ParseArgs() {
         i)
             SIMPLER_BUILD="true"
             ;;
+        d)
+            SOURCES_ONLY="true"
+            ;;
         ?)
             echo "unkonw argument"
             exit 1
@@ -239,6 +243,21 @@ function ParseArgs() {
 function FixArgs() {
     mkdir -p "${DIST}"
     DIST="$(cd "$DIST" && pwd)"
+
+    if [ ! "$CPU_NUM" ]; then
+        CPU_NUM=$(nproc)
+        if [ $? -ne 0 ]; then
+            CPU_NUM=2
+        fi
+    fi
+
+    MAKE="$MAKE -j${CPU_NUM}"
+
+    if [ "$SOURCES_ONLY" ]; then
+        WriteConfig
+        $MAKE SOURCES_ONLY="true" extract_all
+        exit $?
+    fi
 }
 
 function Date() {

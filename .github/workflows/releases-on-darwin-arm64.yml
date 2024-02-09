@@ -5,6 +5,9 @@ on:
     tags:
       - "v*"
 
+env:
+  UNAMESPACER: darwin-arm64
+
 jobs:
   init:
     name: Init
@@ -27,6 +30,16 @@ jobs:
           printf -v json '"%s",' "${arr[@]}"
           json="[${json%,}]"
           echo "TARGETS=$json" >> $GITHUB_OUTPUT
+
+      - name: Download sources
+        run: |
+          bash scripts/build.sh -d
+
+      - name: Upload sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: sources
+          path: sources
 
   releases_targets_on_macos_arm64:
     name: Build
@@ -52,10 +65,14 @@ jobs:
             gcc@13 \
             perl
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: sources
+          path: sources
+
       - name: Build
         id: build
         run: |
-          echo ::set-output name=unamespacer::$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)
           bash scripts/build.sh \
             -sL \
             -c "gcc-13" -x "g++-13" \
@@ -64,7 +81,7 @@ jobs:
       - name: Archive
         run: |
           mkdir -p archive
-          tar -zcvf archive/${{ matrix.targets }}-cross-${{ steps.build.outputs.unamespacer }}.tgz \
+          tar -zcvf archive/${{ matrix.targets }}-cross-${{ env.UNAMESPACER }}.tgz \
             -C dist/${{ matrix.targets }}-cross \
             .
 

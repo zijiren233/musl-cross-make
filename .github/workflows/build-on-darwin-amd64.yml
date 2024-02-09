@@ -26,6 +26,16 @@ jobs:
           json="[${json%,}]"
           echo "TARGETS=$json" >> $GITHUB_OUTPUT
 
+      - name: Download sources
+        run: |
+          bash scripts/build.sh -d
+
+      - name: Upload sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: sources
+          path: sources
+
   build_targets_on_macos_amd64:
     name: Build
     runs-on: macos-13
@@ -49,6 +59,11 @@ jobs:
             findutils \
             gcc@13 \
             perl
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: sources
+          path: sources
 
       - name: Build
         run: |

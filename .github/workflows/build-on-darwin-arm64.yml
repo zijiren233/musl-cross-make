@@ -58,7 +58,8 @@ jobs:
             coreutils \
             findutils \
             gcc@13 \
-            perl
+            perl \
+            libtool
 
       - uses: actions/download-artifact@v4
         with:

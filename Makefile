@@ -62,15 +62,6 @@ MPFR_SITE = $(GNU_SITE)/mpfr
 ISL_SITE = $(SOURCEFORGE_MIRROT)/project/libisl
 MINGW_SITE = $(SOURCEFORGE_MIRROT)/project/mingw-w64/mingw-w64/mingw-w64-release
 
-ifneq ($(findstring musl,$(TARGET)),)
-# musl
-override MINGW_VER = 
-else
-# mingw
-override MUSL_VER = 
-override LINUX_VER = 
-endif
-
 SRC_DIRS = gcc-$(GCC_VER) binutils-$(BINUTILS_VER) \
     $(if $(MUSL_VER),musl-$(MUSL_VER)) \
 	$(if $(GMP_VER),gmp-$(GMP_VER)) \

@@ -82,17 +82,6 @@ function Init() {
             sleep 3
         fi
 
-        if [ -x "$(command -v gdate)" ]; then
-            DATE_PATH="$(command -v gdate)"
-            ln -s "$DATE_PATH" "$TMP_BIN_DIR/date"
-        else
-            echo "Warn: gdate not found"
-            echo "Warn: when date is not gnu version, it may cause build error"
-            echo "Warn: you can install coreutils with brew"
-            echo "Warn: brew install coreutils"
-            sleep 3
-        fi
-
     else
         MAKE="make"
     fi
@@ -161,10 +150,12 @@ function Help() {
     echo "-u: dist name suffix"
     echo "-i: simpler build"
     echo "-d: download sources only"
+    echo "-D: disable log print date prefix"
+    echo "-P: disable log print target prefix"
 }
 
 function ParseArgs() {
-    while getopts "hatT:Cc:x:nLlO:j:sSNp:u:id" arg; do
+    while getopts "hatT:Cc:x:nLlO:j:sSNp:u:idDP" arg; do
         case $arg in
         h)
             Help
@@ -230,6 +221,12 @@ function ParseArgs() {
         d)
             SOURCES_ONLY="true"
             ;;
+        D)
+            DISABLE_LOG_PRINT_DATE_PREFIX="true"
+            ;;
+        P)
+            DISABLE_LOG_PRINT_TARGET_PREFIX="true"
+            ;;
         ?)
             echo "unkonw argument"
             exit 1
@@ -261,7 +258,10 @@ function FixArgs() {
 }
 
 function Date() {
-    date '+%H:%M:%S'
+    if [ "$DISABLE_LOG_PRINT_DATE_PREFIX" ]; then
+        return
+    fi
+    date '[+%H:%M:%S] '
 }
 
 function WriteConfig() {
@@ -290,7 +290,6 @@ CXX = ${CXX}
 endif
 
 CHINA = ${USE_CHINA_MIRROR}
-CPUS = ${CPU_NUM}
 OPTIMIZE_LEVEL = ${OPTIMIZE_LEVEL}
 DISABLE_CROSS_STATIC_BUILD = ${DISABLE_CROSS_STATIC_BUILD}
 DISABLE_NATIVE_STATIC_BUILD = ${DISABLE_NATIVE_STATIC_BUILD}
@@ -311,20 +310,24 @@ function Build() {
 
     if [ ! "$ONLY_NATIVE_BUILD" ]; then
         echo "build cross ${DIST_NAME_PREFIX}${TARGET} to ${CROSS_DIST_NAME}"
-        rm -rf "${CROSS_DIST_NAME}" "${CROSS_LOG_FILE}"
         $MAKE tmpclean
         {
             OUTPUT="${CROSS_DIST_NAME}"
             NATIVE=""
         }
         WriteConfig
+        rm -rf "${CROSS_DIST_NAME}" "${CROSS_LOG_FILE}"
         while IFS= read -r line; do
             CURRENT_DATE=$(Date)
             if [ "$LOG_TO_STD" ]; then
-                echo "[$CURRENT_DATE] ${DIST_NAME_PREFIX}${TARGET}-cross: $line"
+                if [ "$DISABLE_LOG_PRINT_TARGET_PREFIX" ]; then
+                    echo "${CURRENT_DATE}$line"
+                else
+                    echo "${CURRENT_DATE}${DIST_NAME_PREFIX}${TARGET}-cross: $line"
+                fi
             fi
             if [ ! "$DISABLE_LOG_TO_FILE" ]; then
-                echo "[$CURRENT_DATE] $line" >>"${CROSS_LOG_FILE}"
+                echo "${CURRENT_DATE}$line" >>"${CROSS_LOG_FILE}"
             fi
         done < <(
             set +e
@@ -347,20 +350,24 @@ function Build() {
 
     if [ "$NATIVE_BUILD" ]; then
         echo "build native ${DIST_NAME_PREFIX}${TARGET} to ${NATIVE_DIST_NAME}"
-        rm -rf "${NATIVE_DIST_NAME}" "${NATIVE_LOG_FILE}"
         $MAKE tmpclean
         {
             OUTPUT="${NATIVE_DIST_NAME}"
             NATIVE="true"
         }
         WriteConfig
+        rm -rf "${NATIVE_DIST_NAME}" "${NATIVE_LOG_FILE}"
         while IFS= read -r line; do
             CURRENT_DATE=$(Date)
             if [ "$LOG_TO_STD" ]; then
-                echo "[$CURRENT_DATE] ${DIST_NAME_PREFIX}${TARGET}-native: $line"
+                if [ "$DISABLE_LOG_PRINT_TARGET_PREFIX" ]; then
+                    echo "${CURRENT_DATE}$line"
+                else
+                    echo "${CURRENT_DATE}${DIST_NAME_PREFIX}${TARGET}-native: $line"
+                fi
             fi
             if [ ! "$DISABLE_LOG_TO_FILE" ]; then
-                echo "[$CURRENT_DATE] $line" >>"${NATIVE_LOG_FILE}"
+                echo "${CURRENT_DATE}$line" >>"${NATIVE_LOG_FILE}"
             fi
         done < <(
             set +e

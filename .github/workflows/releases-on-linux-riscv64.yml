@@ -86,7 +86,7 @@ jobs:
             NATIVE_COMPILER_STATUS=$(curl -sILo /dev/null -w "%{http_code}\n" $NATIVE_COMPILER)
             if [ $NATIVE_COMPILER_STATUS -ne 200 ]; then apt install -y g++; else mkdir -p "riscv64-linux-musl-native" && curl -sL "$NATIVE_COMPILER" | tar -zxf - -C "riscv64-linux-musl-native" --strip-components 1 && chmod -R 0755 riscv64-linux-musl-native && export PATH="$PWD/riscv64-linux-musl-native/bin:$PATH"; fi
             bash scripts/build.sh \
-                -L \
+                -LDP \
                 -T "${{ matrix.targets }}"
 
       - name: Upload ${{ matrix.targets }} cross
@@ -163,7 +163,7 @@ jobs:
             if [ $NATIVE_COMPILER_STATUS -ne 200 ]; then apt install -y g++; else mkdir -p "riscv64-linux-musl-native" && curl -sL "$NATIVE_COMPILER" | tar -zxf - -C "riscv64-linux-musl-native" --strip-components 1 && chmod -R 0755 riscv64-linux-musl-native && export PATH="$PWD/riscv64-linux-musl-native/bin:$PATH"; fi
             chmod -R 0755 dist/${{ matrix.targets }}-cross
             bash scripts/build.sh \
-                -NL \
+                -NLDP \
                 -T "${{ matrix.targets }}"
 
       - name: Archive

@@ -16,7 +16,10 @@ CC = gcc
 CXX = g++
 CFLAGS = 
 CXXFLAGS = 
-LDFLAGS = -s
+LDFLAGS = 
+ifneq ($(shell uname -s),Darwin)
+LDFLAGS += -s
+endif
 
 XGCC_DIR = $(CURDIR)/obj_gcc/gcc
 XGCC = $(XGCC_DIR)/xgcc -B $(XGCC_DIR) -B $(CURDIR)/obj_sysroot/$(TARGET)/lib
@@ -89,14 +92,6 @@ COMMON_CONFIG := $(COMPILER_ARGS) \
 	CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(strip $(STAT) $(LDFLAGS))" \
 	$(COMMON_CONFIG)
 COMMON_MAKE_ARGS += CC_FOR_BUILD="$(CC)" CXX_FOR_BUILD="$(CXX)"
-
-ifeq ($(CPUS),)
-MAKE_ARGS := -j$(shell if command -v nproc >/dev/null 2>&1; then nproc; else echo 2; fi) \
-	$(MAKE_ARGS)
-else
-MAKE_ARGS := -j$(CPUS) \
-	$(MAKE_ARGS)
-endif
 
 ifneq ($(findstring musl,$(TARGET)),)
 # musl

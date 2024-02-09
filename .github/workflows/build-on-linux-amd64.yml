@@ -67,7 +67,7 @@ jobs:
           NATIVE_COMPILER_STATUS=$(curl -sILo /dev/null -w "%{http_code}\n" $NATIVE_COMPILER)
           if [ $NATIVE_COMPILER_STATUS -eq 200 ]; then mkdir -p "x86_64-linux-musl-native" && curl -sL "$NATIVE_COMPILER" | tar -zxf - -C "x86_64-linux-musl-native" --strip-components 1 && chmod -R 0755 x86_64-linux-musl-native && export PATH="$PWD/x86_64-linux-musl-native/bin:$PATH"; fi
           bash scripts/build.sh \
-            -nLO1 \
+            -nLDPO1 \
             -T "${{ matrix.targets }}"
 
       - name: Upload ${{ matrix.targets }} cross

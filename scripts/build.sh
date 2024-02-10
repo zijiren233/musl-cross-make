@@ -261,7 +261,7 @@ function Date() {
     if [ "$DISABLE_LOG_PRINT_DATE_PREFIX" ]; then
         return
     fi
-    date '[+%H:%M:%S] '
+    echo "[$(date '+%H:%M:%S')] "
 }
 
 function WriteConfig() {

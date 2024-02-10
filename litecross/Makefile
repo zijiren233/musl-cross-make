@@ -81,17 +81,15 @@ endif
 override CFLAGS := $(strip $(COMMON_FLAGS) $(CFLAGS))
 override CXXFLAGS := $(strip $(COMMON_FLAGS) $(CXXFLAGS))
 
+COMMON_CONFIG := CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(strip $(STAT) $(LDFLAGS))" $(COMMON_CONFIG)
 ifeq ($(NATIVE),)
 # cross build
-COMPILER_ARGS += CC="$(CC)" CXX="$(CXX)"
+COMMON_CONFIG := CC="$(CC)" CXX="$(CXX)" $(COMMON_CONFIG)
 else
 # native build
-COMPILER_ARGS += CC="$(CROSS_CC)" CXX="$(CROSS_CXX)"
+COMMON_CONFIG := CC="$(CROSS_CC)" CXX="$(CROSS_CXX)" $(COMMON_CONFIG)
+COMMON_MAKE_ARGS += CC_FOR_BUILD="$(CC)" CXX_FOR_BUILD="$(CXX)" CFLAGS_FOR_BUILD="$(CFLAGS)" CXXFLAGS_FOR_BUILD="$(CXXFLAGS)" LDFLAGS_FOR_BUILD="$(strip $(STAT) $(LDFLAGS))"
 endif
-COMMON_CONFIG := $(COMPILER_ARGS) \
-	CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(strip $(STAT) $(LDFLAGS))" \
-	$(COMMON_CONFIG)
-COMMON_MAKE_ARGS += CC_FOR_BUILD="$(CC)" CXX_FOR_BUILD="$(CXX)"
 
 ifneq ($(findstring musl,$(TARGET)),)
 # musl
@@ -296,18 +294,14 @@ FULL_MINGW_CRT_CONFIG += RC="$(XRC)" \
 	READELF="$(XREADELF)" \
 	STRIP="$(XSTRIP)"
 
-obj_gcc/.lc_built: | obj_sysroot/.lc_libs obj_sysroot/.lc_headers
-obj_gcc/.lc_configured: obj_binutils/.lc_built
-ifneq ($(MINGW_SRCDIR),)
-# mingw
+obj_mingw_headers/.lc_configured: | obj_binutils/.lc_built
 obj_mingw_crt/.lc_configured: | obj_sysroot/.lc_headers obj_gcc/gcc/.lc_built obj_binutils/.lc_built
 obj_mingw_pthreads/.lc_configured: | obj_sysroot/.lc_headers obj_gcc/gcc/.lc_built obj_binutils/.lc_built obj_sysroot/.lc_libs_crt
-obj_gcc/gcc/.lc_built: obj_sysroot/.lc_headers | obj_sysroot/usr obj_sysroot/lib32 obj_sysroot/lib64 obj_sysroot/include
-else
-# musl
 obj_musl/.lc_configured: | obj_gcc/gcc/.lc_built
 obj_musl/.lc_built: obj_gcc/$(TARGET)/libgcc/libgcc.a
-endif
+obj_gcc/.lc_built: | obj_sysroot/.lc_libs obj_sysroot/.lc_headers
+obj_gcc/gcc/.lc_built: | obj_sysroot/usr obj_sysroot/lib32 obj_sysroot/lib64 obj_sysroot/include
+obj_gcc/.lc_configured: obj_binutils/.lc_built
 check-compiler:
 	@if ! command -v $(CC) >/dev/null; then \
 		echo "$(CC) not found in the environment"; \
@@ -332,7 +326,10 @@ FULL_MINGW_PTHREADS_CONFIG += CC="$(CROSS_CC)" CFLAGS="$(CFLAGS)" \
 FULL_MINGW_CRT_CONFIG += CC="$(CROSS_CC)" CFLAGS="$(CFLAGS)" \
 	CXX="$(CROSS_CXX)" CXXFLAGS="$(CXXFLAGS)" \
 	LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib $(LDFLAGS)"
-obj_gcc/gcc/.lc_built: obj_sysroot/.lc_headers | obj_sysroot/usr obj_sysroot/lib32 obj_sysroot/lib64 obj_sysroot/include
+
+ifneq ($(findstring musl,$(TARGET)),)
+MAKE += STMP_FIXINC=
+endif
 check-compiler:
 	@if ! command -v $(CROSS_CC) >/dev/null; then \
 		echo "$(CROSS_CC) not found in the environment"; \
@@ -465,6 +462,10 @@ obj_gcc/.lc_mpc_built: | obj_gcc/.lc_mpfr_built
 	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_STATIC_MAKE_ARGS)" all-mpc
 	touch $@
 
+ifneq ($(MINGW_SRCDIR),)
+# mingw
+obj_gcc/gcc/.lc_built: | obj_sysroot/.lc_headers
+endif
 obj_gcc/gcc/.lc_built: | obj_gcc/.lc_mpc_built
 	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)" all-gcc
 	touch $@
@@ -477,18 +478,20 @@ obj_mingw/.lc_configured: | obj_mingw src_mingw obj_mingw_headers/.lc_configured
 	touch $@
 
 ifeq ($(MUSL_SRCDIR),)
+# mingw
 obj_sysroot/.lc_headers: | obj_mingw_headers/.lc_configured obj_sysroot
 	cd obj_mingw_headers && $(MAKE) $(MAKE_ARGS) DESTDIR=$(CURDIR)/obj_sysroot/$(TARGET) install
 	rm -f $(CURDIR)/obj_sysroot/mingw
 	ln -s $(TARGET) $(CURDIR)/obj_sysroot/mingw
 	touch $@
 else
+# musl
 obj_sysroot/.lc_headers: | obj_musl/.lc_configured obj_sysroot
 	cd obj_musl && $(MAKE) $(MAKE_ARGS) $(MUSL_MAKE_ARGS) DESTDIR=$(CURDIR)/obj_sysroot install-headers
 	touch $@
 endif
 
-obj_gcc/$(TARGET)/libgcc/libgcc.a: obj_sysroot/.lc_headers | obj_sysroot/usr obj_sysroot/lib32 obj_sysroot/lib64 obj_sysroot/include
+obj_gcc/$(TARGET)/libgcc/libgcc.a: obj_sysroot/.lc_headers
 	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) enable_shared=no $(TOOLCHAIN_MAKE_ARGS)" all-target-libgcc
 
 obj_musl/.lc_built: | obj_musl/.lc_configured

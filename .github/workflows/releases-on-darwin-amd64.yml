@@ -43,7 +43,7 @@ jobs:
 
   releases_targets_on_macos_amd64:
     name: Build
-    runs-on: macos-13
+    runs-on: macos-latest
     needs:
       - init
     strategy:
@@ -62,7 +62,7 @@ jobs:
             gpatch \
             coreutils \
             findutils \
-            gcc@12 \
+            gcc@13 \
             perl \
             libtool
 
@@ -76,7 +76,7 @@ jobs:
         run: |
           bash scripts/build.sh \
             -sLDP \
-            -c "gcc-12" -x "g++-12" \
+            -c "gcc-13" -x "g++-13" \
             -T "${{ matrix.targets }}"
 
       - name: Archive

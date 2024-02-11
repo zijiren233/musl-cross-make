@@ -61,7 +61,7 @@ jobs:
         name: Build
         id: build
         with:
-          arch: arm64
+          arch: aarch64
           distro: alpine_latest
           githubToken: ${{ github.token }}
           dockerRunArgs: |
@@ -120,7 +120,7 @@ jobs:
         name: Build
         id: build
         with:
-          arch: arm64
+          arch: aarch64
           distro: alpine_latest
           githubToken: ${{ github.token }}
           dockerRunArgs: |

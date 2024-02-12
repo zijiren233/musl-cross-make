@@ -82,7 +82,7 @@ jobs:
               perl
           run: |
             cd /build
-            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/${{ github.env.USE_NATIVE_VERSION }}/aarch64-linux-musl-native-${{ env.UNAMESPACER }}.tgz"
+            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/${{ env.USE_NATIVE_VERSION }}/aarch64-linux-musl-native-${{ env.UNAMESPACER }}.tgz"
             echo "try install $NATIVE_COMPILER"
             NATIVE_COMPILER_STATUS=$(curl -sILo /dev/null -w "%{http_code}\n" $NATIVE_COMPILER)
             echo "status: $NATIVE_COMPILER_STATUS"
@@ -160,7 +160,7 @@ jobs:
               perl
           run: |
             cd /build
-            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/${{ github.env.USE_NATIVE_VERSION }}/aarch64-linux-musl-native-${{ env.UNAMESPACER }}.tgz"
+            NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/${{ env.USE_NATIVE_VERSION }}/aarch64-linux-musl-native-${{ env.UNAMESPACER }}.tgz"
             echo "try install $NATIVE_COMPILER"
             NATIVE_COMPILER_STATUS=$(curl -sILo /dev/null -w "%{http_code}\n" $NATIVE_COMPILER)
             echo "status: $NATIVE_COMPILER_STATUS"

@@ -57,7 +57,11 @@ endif
 COMMON_FLAGS := -O$(OPTIMIZE_LEVEL) $(COMMON_FLAGS)
 
 ifeq ($(STAT),)
+ifeq ($(shell uname -s),Darwin)
+STAT = 
+else
 STAT = -static --static
+endif
 endif
 ifeq ($(NATIVE),)
 # cross

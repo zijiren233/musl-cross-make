@@ -51,6 +51,13 @@ export CFLAGS
 export CXXFLAGS
 export LDFLAGS
 
+ifeq ($(CROSS_CC),)
+CROSS_CC = $(TARGET)-gcc
+endif
+ifeq ($(CROSS_CXX),)
+CROSS_CXX = $(TARGET)-g++
+endif
+
 ifeq ($(NATIVE_CC),)
 NATIVE_CC := $(CC)
 endif
@@ -67,12 +74,12 @@ COMMON_MAKE_ARGS += LDFLAGS="$(strip $(STAT) $(LDFLAGS))" \
 
 ifeq ($(NATIVE),)
 # build cross
-export CC := $(NATIVE_CC)
-export CXX := $(NATIVE_CXX)
+export CC = $(NATIVE_CC)
+export CXX = $(NATIVE_CXX)
 else
 # build native
-export CC := $(TARGET)-gcc
-export CXX := $(TARGET)-g++
+export CC = $(CROSS_CC)
+export CXX = $(CROSS_CXX)
 endif
 
 ifneq ($(findstring musl,$(TARGET)),)
@@ -229,7 +236,9 @@ FULL_MINGW_PTHREADS_CONFIG = $(MINGW_CONFIG) \
 	--prefix= --host=$(TARGET) --with-sysroot=$(SYSROOT)
 
 ifeq ($(BUILD),)
-BUILD = $(shell cd $(GCC_SRCDIR) && ./config.guess)
+GUESS = $(shell cd $(GCC_SRCDIR) && ./config.guess)
+TARGET_CANON = $(shell cd $(GCC_SRCDIR) && ./config.sub $(TARGET))
+BUILD = $(GUESS)$(if $(subst $(TARGET_CANON),,$(GUESS)),,xx)
 endif
 
 ifeq ($(NATIVE),)
@@ -467,9 +476,7 @@ install-binutils: | obj_binutils/.lc_built
 install-gcc: | obj_gcc/.lc_built
 	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)" DESTDIR=$(DESTDIR)$(OUTPUT) install
 	ln -sf $(TARGET)-gcc $(DESTDIR)$(OUTPUT)/bin/$(TARGET)-cc
-	if [ -n "$(NATIVE)" ]; then \
-	    ln -sf $(TARGET)-gcc $(DESTDIR)$(OUTPUT)/bin/cc; \
-	fi
+	if [ -n "$(NATIVE)" ]; then ln -sf $(TARGET)-gcc $(DESTDIR)$(OUTPUT)/bin/cc; fi
 
 obj_mingw_headers/.lc_configured: | obj_mingw_headers src_mingw
 	cd obj_mingw_headers && ../src_mingw/mingw-w64-headers/configure $(FULL_MINGW_HEADERS_CONFIG) || (cat config.log && exit 1)

@@ -16,9 +16,12 @@ CC = gcc
 CXX = g++
 CFLAGS = 
 CXXFLAGS = 
-LDFLAGS = 
-ifneq ($(shell uname -s),Darwin)
-LDFLAGS += -s
+LDFLAGS = -s
+
+ifeq ($(shell uname -s),Darwin)
+STAT = 
+else
+STAT = -static --static
 endif
 
 XGCC_DIR = $(CURDIR)/obj_gcc/gcc
@@ -41,65 +44,43 @@ LIBTOOL = $(XBINUTILS_DIR)/libtool
 
 -include config.mak
 
-ifeq ($(CROSS_CC)$(CROSS_CXX),)
-override CROSS_CC = $(TARGET)-gcc
-override CROSS_CXX = $(TARGET)-g++
-endif
+CFLAGS := $(strip $(COMMON_FLAGS) $(CFLAGS))
+CXXFLAGS := $(strip $(COMMON_FLAGS) $(CXXFLAGS))
 
-ifeq ($(OPTIMIZE_LEVEL),)
-OPTIMIZE_LEVEL = s
-else
-ifeq ($(OPTIMIZE_LEVEL),0)
-# dont use -O0
-override OPTIMIZE_LEVEL = 1
-endif
-endif
-COMMON_FLAGS := -O$(OPTIMIZE_LEVEL) $(COMMON_FLAGS)
+export CFLAGS
+export CXXFLAGS
+export LDFLAGS
 
-ifeq ($(STAT),)
-ifeq ($(shell uname -s),Darwin)
-STAT = 
-else
-STAT = -static --static
+ifeq ($(NATIVE_CC),)
+NATIVE_CC := $(CC)
 endif
+NATIVE_CC := $(strip $(NATIVE_CC) $(STAT))
+
+ifeq ($(NATIVE_CXX),)
+NATIVE_CXX := $(CXX)
 endif
+NATIVE_CXX := $(strip $(NATIVE_CXX) $(STAT))
+
+COMMON_MAKE_ARGS += LDFLAGS="$(strip $(STAT) $(LDFLAGS))" \
+	CC_FOR_BUILD="$(NATIVE_CC)" CXX_FOR_BUILD="$(NATIVE_CXX)" \
+	CFLAGS_FOR_BUILD="$(CFLAGS)" CXXFLAGS_FOR_BUILD="$(CXXFLAGS)" LDFLAGS_FOR_BUILD="$(strip $(STAT) $(LDFLAGS))"
+
 ifeq ($(NATIVE),)
-# cross
-ifneq ($(DISABLE_CROSS_STATIC_BUILD),)
-override STAT = 
-endif
+# build cross
+export CC := $(NATIVE_CC)
+export CXX := $(NATIVE_CXX)
 else
-# native
-ifneq ($(DISABLE_NATIVE_STATIC_BUILD),)
-override STAT = 
-endif
-endif
-
-ifneq ($(STAT),)
-CC += $(STAT)
-CXX += $(STAT)
-CROSS_CC += $(STAT)
-CROSS_CXX += $(STAT)
-endif
-
-override CFLAGS := $(strip $(COMMON_FLAGS) $(CFLAGS))
-override CXXFLAGS := $(strip $(COMMON_FLAGS) $(CXXFLAGS))
-
-COMMON_CONFIG := CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(strip $(STAT) $(LDFLAGS))" $(COMMON_CONFIG)
-ifeq ($(NATIVE),)
-# cross build
-COMMON_CONFIG := CC="$(CC)" CXX="$(CXX)" $(COMMON_CONFIG)
-else
-# native build
-COMMON_CONFIG := CC="$(CROSS_CC)" CXX="$(CROSS_CXX)" $(COMMON_CONFIG)
-COMMON_MAKE_ARGS += CC_FOR_BUILD="$(CC)" CXX_FOR_BUILD="$(CXX)" CFLAGS_FOR_BUILD="$(CFLAGS)" CXXFLAGS_FOR_BUILD="$(CXXFLAGS)" LDFLAGS_FOR_BUILD="$(strip $(STAT) $(LDFLAGS))"
+# build native
+export CC := $(TARGET)-gcc
+export CXX := $(TARGET)-g++
 endif
 
 ifneq ($(findstring musl,$(TARGET)),)
-# musl
-override MINGW_SRCDIR = 
+# build musl
+MINGW_SRCDIR := 
 
-GCC_CONFIG_FOR_TARGET += --enable-initfini-array
+GCC_CONFIG_FOR_TARGET += --enable-initfini-array \
+	disable-symvers
 
 ifneq ($(findstring fdpic,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --enable-fdpic
@@ -176,9 +157,9 @@ endif
 endif
 
 else
-# mingw
-override MUSL_SRCDIR = 
-override LINUX_SRCDIR = 
+# build mingw
+MUSL_SRCDIR := 
+LINUX_SRCDIR := 
 
 GCC_CONFIG_FOR_TARGET += --disable-sjlj-exceptions \
 	--enable-threads=posix
@@ -232,7 +213,7 @@ FULL_BINUTILS_CONFIG = $(COMMON_CONFIG) $(BINUTILS_CONFIG) $(TOOLCHAIN_CONFIG)
 FULL_GCC_CONFIG = $(COMMON_CONFIG) \
 	$(GCC_CONFIG) $(GCC_CONFIG_FOR_TARGET) $(TOOLCHAIN_CONFIG) \
 	--with-build-sysroot=$(CURDIR)/obj_sysroot \
-    $(OVERRIDE)
+	$(OVERRIDE)
 
 FULL_MUSL_CONFIG = $(MUSL_CONFIG) \
 	--prefix= --host=$(TARGET)
@@ -248,14 +229,12 @@ FULL_MINGW_PTHREADS_CONFIG = $(MINGW_CONFIG) \
 	--prefix= --host=$(TARGET) --with-sysroot=$(SYSROOT)
 
 ifeq ($(BUILD),)
-GUESS = $(shell cd $(GCC_SRCDIR) && ./config.guess)
-TARGET_CANON = $(shell cd $(GCC_SRCDIR) && ./config.sub $(TARGET))
-BUILD = $(GUESS)$(if $(subst $(TARGET_CANON),,$(GUESS)),,xx)
+BUILD = $(shell cd $(GCC_SRCDIR) && ./config.guess)
 endif
 
 ifeq ($(NATIVE),)
-# cross build
-override SYSROOT = /$(TARGET)
+# build cross
+SYSROOT = /$(TARGET)
 
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(BUILD)
 FULL_GCC_CONFIG += --build=$(BUILD) --host=$(BUILD)
@@ -269,13 +248,14 @@ GCC_MAKE_ARGS += AR_FOR_TARGET=$(XAR) \
 	READELF_FOR_TARGET=$(XREADELF) \
 	STRIP_FOR_TARGET=$(XSTRIP)
 
-FULL_MUSL_CONFIG += CC="$(XGCC)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
+FULL_MUSL_CONFIG += CC="$(XGCC)" \
 	LIBCC="../obj_gcc/$(TARGET)/libgcc/libgcc.a" \
 	AR="$(XAR)" RANLIB="$(XRANLIB)"
 
+# LDFLAGS dont add -static --static
 FULL_MINGW_PTHREADS_CONFIG += RC="$(XRC)" \
-	CC="$(XGCC)" CFLAGS="$(CFLAGS)" \
-	CXX="$(XGXX)" CXXFLAGS="$(CXXFLAGS)" \
+	CC="$(XGCC)" \
+	CXX="$(XGXX)" \
 	CPP="$(XCPP)" CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include" \
 	LD="$(XLD)" LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib $(LDFLAGS)" \
 	DLLTOOL="$(DLLTOOL)" \
@@ -286,8 +266,8 @@ FULL_MINGW_PTHREADS_CONFIG += RC="$(XRC)" \
 	READELF="$(XREADELF)" \
 	STRIP="$(XSTRIP)"
 FULL_MINGW_CRT_CONFIG += RC="$(XRC)" \
-	CC="$(XGCC)" CFLAGS="$(CFLAGS)" \
-	CXX="$(XGXX)" CXXFLAGS="$(CXXFLAGS)" \
+	CC="$(XGCC)" \
+	CXX="$(XGXX)" \
 	CPP="$(XCPP)" CPPFLAGS="-I$(CURDIR)/obj_sysroot/$(TARGET)/include" \
 	LD="$(XLD)" LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib $(LDFLAGS)" \
 	DLLTOOL="$(DLLTOOL)" \
@@ -303,46 +283,20 @@ obj_mingw_crt/.lc_configured: | obj_sysroot/.lc_headers obj_gcc/gcc/.lc_built ob
 obj_mingw_pthreads/.lc_configured: | obj_sysroot/.lc_headers obj_gcc/gcc/.lc_built obj_binutils/.lc_built obj_sysroot/.lc_libs_crt
 obj_musl/.lc_configured: | obj_gcc/gcc/.lc_built
 obj_musl/.lc_built: obj_gcc/$(TARGET)/libgcc/libgcc.a
-obj_gcc/.lc_built: | obj_sysroot/.lc_libs obj_sysroot/.lc_headers
-obj_gcc/gcc/.lc_built: | obj_sysroot/usr obj_sysroot/lib32 obj_sysroot/lib64 obj_sysroot/include
 obj_gcc/.lc_configured: obj_binutils/.lc_built
-check-compiler:
-	@if ! command -v $(CC) >/dev/null; then \
-		echo "$(CC) not found in the environment"; \
-		exit 1; \
-	fi
-	@if ! command -v $(CXX) >/dev/null; then \
-		echo "$(CXX) not found in the environment"; \
-		exit 1; \
-	fi
 
 else
-# native build
-override SYSROOT = 
+# build native
+SYSROOT = 
 
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(TARGET)
 FULL_GCC_CONFIG += --build=$(BUILD) --host=$(TARGET)
-FULL_MUSL_CONFIG += CC="$(CROSS_CC)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)"
 
-FULL_MINGW_PTHREADS_CONFIG += CC="$(CROSS_CC)" CFLAGS="$(CFLAGS)" \
-	CXX="$(CROSS_CXX)" CXXFLAGS="$(CXXFLAGS)" \
-	LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib $(LDFLAGS)"
-FULL_MINGW_CRT_CONFIG += CC="$(CROSS_CC)" CFLAGS="$(CFLAGS)" \
-	CXX="$(CROSS_CXX)" CXXFLAGS="$(CXXFLAGS)" \
-	LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib $(LDFLAGS)"
+# LDFLAGS dont add -static --static
+FULL_MINGW_PTHREADS_CONFIG += LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib $(LDFLAGS)"
+FULL_MINGW_CRT_CONFIG += LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib $(LDFLAGS)"
 
-ifneq ($(findstring musl,$(TARGET)),)
-MAKE += STMP_FIXINC=
-endif
-check-compiler:
-	@if ! command -v $(CROSS_CC) >/dev/null; then \
-		echo "$(CROSS_CC) not found in the environment"; \
-		exit 1; \
-	fi
-	@if ! command -v $(CROSS_CXX) >/dev/null; then \
-		echo "$(CROSS_CXX) not found in the environment"; \
-		exit 1; \
-	fi
+obj_gcc/gcc/.lc_built: | obj_sysroot/.lc_headers
 
 endif
 
@@ -355,9 +309,6 @@ all:
 install: all
 
 else
-
-all: | check-compiler
-install: | check-compiler
 
 ifeq ($(MUSL_SRCDIR),)
 all: mingw gcc binutils
@@ -454,23 +405,12 @@ obj_gcc/.lc_configured: | obj_gcc src_gcc
 	cd obj_gcc && ../src_gcc/configure $(FULL_GCC_CONFIG) || (cat config.log && exit 1)
 	touch $@
 
-obj_gcc/.lc_gmp_built: | obj_gcc/.lc_configured
-	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_STATIC_MAKE_ARGS)" all-gmp
-	touch $@
-
-obj_gcc/.lc_mpfr_built: | obj_gcc/.lc_gmp_built
-	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_STATIC_MAKE_ARGS)" all-mpfr
-	touch $@
-
-obj_gcc/.lc_mpc_built: | obj_gcc/.lc_mpfr_built
-	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_STATIC_MAKE_ARGS)" all-mpc
-	touch $@
-
 ifneq ($(MINGW_SRCDIR),)
-# mingw
+# build mingw
 obj_gcc/gcc/.lc_built: | obj_sysroot/.lc_headers
 endif
-obj_gcc/gcc/.lc_built: | obj_gcc/.lc_mpc_built
+obj_gcc/gcc/.lc_built: | obj_sysroot/usr obj_sysroot/lib32 obj_sysroot/lib64 obj_sysroot/include
+obj_gcc/gcc/.lc_built: | obj_gcc/.lc_configured
 	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)" all-gcc
 	touch $@
 
@@ -513,6 +453,7 @@ obj_sysroot/.lc_libs: | obj_musl/.lc_built
 	touch $@
 endif
 
+obj_gcc/.lc_built: | obj_sysroot/.lc_libs obj_sysroot/.lc_headers
 obj_gcc/.lc_built: | obj_gcc/.lc_configured obj_gcc/gcc/.lc_built
 	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)"
 	touch $@
@@ -527,7 +468,7 @@ install-gcc: | obj_gcc/.lc_built
 	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)" DESTDIR=$(DESTDIR)$(OUTPUT) install
 	ln -sf $(TARGET)-gcc $(DESTDIR)$(OUTPUT)/bin/$(TARGET)-cc
 	if [ -n "$(NATIVE)" ]; then \
-		ln -sf $(TARGET)-gcc $(DESTDIR)$(OUTPUT)/bin/cc; \
+	    ln -sf $(TARGET)-gcc $(DESTDIR)$(OUTPUT)/bin/cc; \
 	fi
 
 obj_mingw_headers/.lc_configured: | obj_mingw_headers src_mingw
@@ -586,7 +527,7 @@ src_kernel_headers: | $(LINUX_SRCDIR)
 	ln -sf "$(LINUX_SRCDIR)" $@
 obj_kernel_headers/.lc_built: | src_kernel_headers
 	mkdir -p $(CURDIR)/obj_kernel_headers/staged
-	cd src_kernel_headers && $(MAKE) $(MAKE_ARGS) ARCH=$(LINUX_ARCH) O=$(CURDIR)/obj_kernel_headers INSTALL_HDR_PATH=$(CURDIR)/obj_kernel_headers/staged HOSTCC="$(CC)" headers_install
+	cd src_kernel_headers && $(MAKE) $(MAKE_ARGS) ARCH=$(LINUX_ARCH) O=$(CURDIR)/obj_kernel_headers INSTALL_HDR_PATH=$(CURDIR)/obj_kernel_headers/staged HOSTCC="$(NATIVE_CC)" headers_install
 	find obj_kernel_headers/staged/include '(' -name .install -o -name ..install.cmd ')' -exec rm {} +
 	touch $@
 install-kernel-headers: | obj_kernel_headers/.lc_built

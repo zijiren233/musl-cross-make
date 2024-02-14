@@ -133,7 +133,6 @@ function Init() {
 function Help() {
     echo "-h: help"
     echo "-a: enable archive"
-    echo "-t: test build only"
     echo "-T: targets file path or targets string"
     echo "-C: use china mirror"
     echo "-c: set CC"
@@ -144,10 +143,6 @@ function Help() {
     echo "-l: disable log to file"
     echo "-O: set optimize level"
     echo "-j: set job number"
-    echo "-s: disable cross static build"
-    echo "-S: disable native static build"
-    echo "-p: dist name prefix"
-    echo "-u: dist name suffix"
     echo "-i: simpler build"
     echo "-d: download sources only"
     echo "-D: disable log print date prefix"
@@ -155,7 +150,7 @@ function Help() {
 }
 
 function ParseArgs() {
-    while getopts "hatT:Cc:x:nLlO:j:sSNp:u:idDP" arg; do
+    while getopts "haT:Cc:x:nLlO:j:NidDP" arg; do
         case $arg in
         h)
             Help
@@ -163,9 +158,6 @@ function ParseArgs() {
             ;;
         a)
             ENABLE_ARCHIVE="true"
-            ;;
-        t)
-            TEST_BUILD_ONLY="true"
             ;;
         T)
             TARGETS_FILE="$OPTARG"
@@ -202,18 +194,6 @@ function ParseArgs() {
                 echo "cpu number must be number"
                 exit 1
             fi
-            ;;
-        s)
-            DISABLE_CROSS_STATIC_BUILD="true"
-            ;;
-        S)
-            DISABLE_NATIVE_STATIC_BUILD="true"
-            ;;
-        p)
-            DIST_NAME_PREFIX="$OPTARG"
-            ;;
-        u)
-            DIST_NAME_SUFFIX="$OPTARG"
             ;;
         i)
             SIMPLER_BUILD="true"
@@ -255,6 +235,10 @@ function FixArgs() {
         $MAKE SOURCES_ONLY="true" extract_all
         exit $?
     fi
+
+    if [ ! "$OPTIMIZE_LEVEL" ]; then
+        OPTIMIZE_LEVEL="s"
+    fi
 }
 
 function Date() {
@@ -290,14 +274,35 @@ CXX = ${CXX}
 endif
 
 CHINA = ${USE_CHINA_MIRROR}
-OPTIMIZE_LEVEL = ${OPTIMIZE_LEVEL}
-DISABLE_CROSS_STATIC_BUILD = ${DISABLE_CROSS_STATIC_BUILD}
-DISABLE_NATIVE_STATIC_BUILD = ${DISABLE_NATIVE_STATIC_BUILD}
+
+COMMON_FLAGS += -O${OPTIMIZE_LEVEL}
 
 SIMPLER_BUILD = ${SIMPLER_BUILD}
 
 COMMON_CONFIG += --with-debug-prefix-map=\$(CURDIR)= --enable-compressed-debug-sections=none
 EOF
+}
+
+function TestCrossCompiler() {
+    COMPILER="$@"
+    if [ -z "$COMPILER" ]; then
+        echo "no compiler"
+        return 1
+    fi
+    echo "test cross compiler: $COMPILER"
+    if ! echo '#include <stdio.h>
+int main()
+{
+    printf("hello world\\n");
+    return 0;
+}
+' | $COMPILER -x c - -o /dev/null; then
+        echo "test cross compiler error"
+        return 1
+    else
+        echo "test cross compiler success"
+        return
+    fi
 }
 
 function Build() {
@@ -310,12 +315,12 @@ function Build() {
 
     if [ ! "$ONLY_NATIVE_BUILD" ]; then
         echo "build cross ${DIST_NAME_PREFIX}${TARGET} to ${CROSS_DIST_NAME}"
-        $MAKE tmpclean
         {
             OUTPUT="${CROSS_DIST_NAME}"
             NATIVE=""
+            WriteConfig
         }
-        WriteConfig
+        $MAKE tmpclean
         rm -rf "${CROSS_DIST_NAME}" "${CROSS_LOG_FILE}"
         while IFS= read -r line; do
             CURRENT_DATE=$(Date)
@@ -333,6 +338,7 @@ function Build() {
             set +e
             $MAKE $MORE_ARGS install 2>&1
             echo $? >"${CROSS_DIST_NAME}.exit"
+            set -e
         )
         read EXIT_CODE <"${CROSS_DIST_NAME}.exit"
         rm "${CROSS_DIST_NAME}.exit"
@@ -342,20 +348,25 @@ function Build() {
                 echo "full build log: ${CROSS_LOG_FILE}"
             fi
             echo "build cross ${DIST_NAME_PREFIX}${TARGET} error"
-            exit 1
+            exit $EXIT_CODE
         else
             echo "build cross ${DIST_NAME_PREFIX}${TARGET} success"
+            TestCrossCompiler "${CROSS_DIST_NAME}/bin/${TARGET}-gcc -static --static"
+        fi
+        if [ "$ENABLE_ARCHIVE" ]; then
+            tar -zcf "${CROSS_DIST_NAME}.tgz" -C "${CROSS_DIST_NAME}" .
+            echo "package ${CROSS_DIST_NAME} to ${CROSS_DIST_NAME}.tgz success"
         fi
     fi
 
     if [ "$NATIVE_BUILD" ]; then
         echo "build native ${DIST_NAME_PREFIX}${TARGET} to ${NATIVE_DIST_NAME}"
-        $MAKE tmpclean
         {
             OUTPUT="${NATIVE_DIST_NAME}"
             NATIVE="true"
+            WriteConfig
         }
-        WriteConfig
+        $MAKE tmpclean
         rm -rf "${NATIVE_DIST_NAME}" "${NATIVE_LOG_FILE}"
         while IFS= read -r line; do
             CURRENT_DATE=$(Date)
@@ -374,6 +385,7 @@ function Build() {
             PATH="${CROSS_DIST_NAME}/bin:${PATH}" \
                 $MAKE $MORE_ARGS install 2>&1
             echo $? >"${NATIVE_DIST_NAME}.exit"
+            set -e
         )
         read EXIT_CODE <"${NATIVE_DIST_NAME}.exit"
         rm "${NATIVE_DIST_NAME}.exit"
@@ -383,20 +395,11 @@ function Build() {
                 echo "full build log: ${NATIVE_LOG_FILE}"
             fi
             echo "build native ${DIST_NAME_PREFIX}${TARGET} error"
-            exit 1
+            exit $EXIT_CODE
         else
             echo "build native ${DIST_NAME_PREFIX}${TARGET} success"
         fi
-    fi
-    if [ "$TEST_BUILD_ONLY" ]; then
-        rm -rf "${CROSS_DIST_NAME}" "${NATIVE_DIST_NAME}"
-    elif [ "$ENABLE_ARCHIVE" ]; then
-        if [ ! "$ONLY_NATIVE_BUILD" ]; then
-            tar -zcf "${CROSS_DIST_NAME}.tgz" -C "${CROSS_DIST_NAME}" .
-            echo "package ${CROSS_DIST_NAME} to ${CROSS_DIST_NAME}.tgz success"
-        fi
-
-        if [ "$NATIVE_BUILD" ]; then
+        if [ "$ENABLE_ARCHIVE" ]; then
             tar -zcf "${NATIVE_DIST_NAME}.tgz" -C "${NATIVE_DIST_NAME}" .
             echo "package ${NATIVE_DIST_NAME} to ${NATIVE_DIST_NAME}.tgz success"
         fi

@@ -228,7 +228,17 @@ ifeq ($(SOURCES_ONLY),)
 	rm -rf $@
 	mv $@.tmp $@
 	$(COWPATCH) -S gcc-$(GCC_VER)/libstdc++-v3
+
+ifneq ($(findstring mingw,$(TARGET)),)
+extract_all: | $(filter-out linux-% musl-%,$(SRC_DIRS))
+else
+ifneq ($(findstring musl,$(TARGET)),)
+extract_all: | $(filter-out mingw-w64-%,$(SRC_DIRS))
+else
 extract_all: | $(SRC_DIRS)
+endif
+endif
+
 else
 extract_all: | $(patsubst %.sha1,%, $(foreach item,$(SRC_DIRS),$(call find_and_prefix,$(item)))) $(SOURCES)/config.sub $(SOURCES)/config.guess
 endif
@@ -266,10 +276,10 @@ $(BUILD_DIR)/config.mak: | $(BUILD_DIR)
 	$(if $(MINGW_VER),"MINGW_SRCDIR = $(REL_TOP)/mingw-w64-$(MINGW_VER)") \
 	"-include $(REL_TOP)/config.mak"
 
-all: | $(SRC_DIRS) $(BUILD_DIR) $(BUILD_DIR)/Makefile $(BUILD_DIR)/config.mak
+all: | extract_all $(BUILD_DIR) $(BUILD_DIR)/Makefile $(BUILD_DIR)/config.mak
 	cd $(BUILD_DIR) && $(MAKE) $@
 
-install: | $(SRC_DIRS) $(BUILD_DIR) $(BUILD_DIR)/Makefile $(BUILD_DIR)/config.mak
+install: | extract_all $(BUILD_DIR) $(BUILD_DIR)/Makefile $(BUILD_DIR)/config.mak
 	cd $(BUILD_DIR) && $(MAKE) OUTPUT=$(OUTPUT) $@
 
 endif

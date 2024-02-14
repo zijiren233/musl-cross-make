@@ -75,7 +75,7 @@ jobs:
         id: build
         run: |
           bash scripts/build.sh \
-            -sLDP \
+            -LDP \
             -c "gcc-12" -x "g++-12" \
             -T "${{ matrix.targets }}"
 

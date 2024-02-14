@@ -69,7 +69,7 @@ jobs:
       - name: Build
         run: |
           bash scripts/build.sh \
-            -sLDPO1 \
+            -LDPO1 \
             -c "gcc-12" -x "g++-12" \
             -T "${{ matrix.targets }}"
 

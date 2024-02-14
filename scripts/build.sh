@@ -296,7 +296,7 @@ int main()
     printf("hello world\\n");
     return 0;
 }
-' | $COMPILER -x c - -o /dev/null; then
+' | $COMPILER -x c - -o buildtest; then
         echo "test cross compiler error"
         return 1
     else

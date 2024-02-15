@@ -280,7 +280,11 @@ COMMON_FLAGS += -O${OPTIMIZE_LEVEL}
 SIMPLER_BUILD = ${SIMPLER_BUILD}
 
 COMMON_CONFIG += --with-debug-prefix-map=\$(CURDIR)= --enable-compressed-debug-sections=none
+
 EOF
+    for arg in "$@"; do
+        echo "$arg" >>config.mak
+    done
 }
 
 function TestCrossCompiler() {
@@ -364,9 +368,11 @@ function Build() {
         {
             OUTPUT="${NATIVE_DIST_NAME}"
             NATIVE="true"
-            WriteConfig
+            WriteConfig "export PATH := ${CROSS_DIST_NAME}/bin:\$(PATH)"
         }
-        $MAKE tmpclean
+        if [ "$ONLY_NATIVE_BUILD" ]; then
+            $MAKE tmpclean
+        fi
         rm -rf "${NATIVE_DIST_NAME}" "${NATIVE_LOG_FILE}"
         while IFS= read -r line; do
             CURRENT_DATE=$(Date)
@@ -382,8 +388,7 @@ function Build() {
             fi
         done < <(
             set +e
-            PATH="${CROSS_DIST_NAME}/bin:${PATH}" \
-                $MAKE $MORE_ARGS install 2>&1
+            $MAKE $MORE_ARGS install 2>&1
             echo $? >"${NATIVE_DIST_NAME}.exit"
             set -e
         )

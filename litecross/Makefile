@@ -291,7 +291,7 @@ obj_mingw_headers/.lc_configured: | obj_binutils/.lc_built
 obj_mingw_crt/.lc_configured: | obj_sysroot/.lc_headers obj_gcc/gcc/.lc_built obj_binutils/.lc_built
 obj_mingw_pthreads/.lc_configured: | obj_sysroot/.lc_headers obj_gcc/gcc/.lc_built obj_binutils/.lc_built obj_sysroot/.lc_libs_crt
 obj_musl/.lc_configured: | obj_gcc/gcc/.lc_built
-obj_musl/.lc_built: obj_gcc/$(TARGET)/libgcc/libgcc.a
+obj_musl/.lc_built: | obj_gcc/$(TARGET)/libgcc/libgcc.a
 obj_gcc/.lc_configured: obj_binutils/.lc_built
 
 else
@@ -444,7 +444,7 @@ obj_sysroot/.lc_headers: | obj_musl/.lc_configured obj_sysroot
 	touch $@
 endif
 
-obj_gcc/$(TARGET)/libgcc/libgcc.a: obj_sysroot/.lc_headers
+obj_gcc/$(TARGET)/libgcc/libgcc.a: | obj_sysroot/.lc_headers
 	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) enable_shared=no $(TOOLCHAIN_MAKE_ARGS)" all-target-libgcc
 
 obj_musl/.lc_built: | obj_musl/.lc_configured
@@ -519,7 +519,7 @@ install-mingw-crt: | obj_mingw_crt/.lc_built
 install-mingw-pthreads: | obj_mingw_pthreads/.lc_built
 	cd obj_mingw_pthreads && $(MAKE) $(MAKE_ARGS) $(MINGW_MAKE_ARGS) DESTDIR=$(DESTDIR)$(OUTPUT)$(SYSROOT) install
 
-install-mingw: install-mingw-headers install-mingw-crt install-mingw-pthreads
+install-mingw: | install-mingw-headers install-mingw-crt install-mingw-pthreads
 
 ifneq ($(LINUX_SRCDIR),)
 TARGET_ARCH = $(firstword $(subst -, ,$(TARGET)))

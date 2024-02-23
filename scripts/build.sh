@@ -90,7 +90,7 @@ function Init() {
         DEFAULT_CONFIG_SUB_REV="28ea239c53a2"
         DEFAULT_GCC_VER="13.2.0"
         DEFAULT_MUSL_VER="1.2.4"
-        DEFAULT_BINUTILS_VER="2.41"
+        DEFAULT_BINUTILS_VER="2.42"
         DEFAULT_GMP_VER="6.3.0"
         DEFAULT_MPC_VER="1.3.1"
         DEFAULT_MPFR_VER="4.2.1"
@@ -304,6 +304,7 @@ int main()
         echo "test cross compiler error"
         return 1
     else
+        rm buildtest
         echo "test cross compiler success"
         return
     fi

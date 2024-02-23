@@ -44,33 +44,15 @@ LIBTOOL = $(XBINUTILS_DIR)/libtool
 
 -include config.mak
 
+NATIVE_CC := $(CC)
+NATIVE_CXX := $(CXX)
+CROSS_CC := $(TARGET)-gcc
+CROSS_CXX := $(TARGET)-g++
 CFLAGS := $(strip $(COMMON_FLAGS) $(CFLAGS))
 CXXFLAGS := $(strip $(COMMON_FLAGS) $(CXXFLAGS))
-
-export CFLAGS
-export CXXFLAGS
-export LDFLAGS
-
-ifeq ($(CROSS_CC),)
-CROSS_CC = $(TARGET)-gcc
-endif
-ifeq ($(CROSS_CXX),)
-CROSS_CXX = $(TARGET)-g++
-endif
-
-ifeq ($(NATIVE_CC),)
-NATIVE_CC := $(CC)
-endif
-NATIVE_CC := $(strip $(NATIVE_CC) $(STAT))
-
-ifeq ($(NATIVE_CXX),)
-NATIVE_CXX := $(CXX)
-endif
-NATIVE_CXX := $(strip $(NATIVE_CXX) $(STAT))
-
-COMMON_MAKE_ARGS += LDFLAGS="$(strip $(STAT) $(LDFLAGS))" \
-	CC_FOR_BUILD="$(NATIVE_CC)" CXX_FOR_BUILD="$(NATIVE_CXX)" \
-	CFLAGS_FOR_BUILD="$(CFLAGS)" CXXFLAGS_FOR_BUILD="$(CXXFLAGS)" LDFLAGS_FOR_BUILD="$(strip $(STAT) $(LDFLAGS))"
+COMMON_MAKE_ARGS += LDFLAGS="$(LDFLAGS) $(STAT)" \
+	CC_FOR_BUILD="$(NATIVE_CC) $(STAT)" CXX_FOR_BUILD="$(NATIVE_CXX) $(STAT)" \
+	CFLAGS_FOR_BUILD="$(CFLAGS)" CXXFLAGS_FOR_BUILD="$(CXXFLAGS)" LDFLAGS_FOR_BUILD="$(LDFLAGS) $(STAT)"
 
 ifeq ($(NATIVE),)
 # build cross
@@ -81,6 +63,11 @@ else
 export CC = $(CROSS_CC)
 export CXX = $(CROSS_CXX)
 endif
+export CC += $(STAT)
+export CXX += $(STAT)
+export CFLAGS
+export CXXFLAGS
+export LDFLAGS
 
 ifneq ($(findstring musl,$(TARGET)),)
 # build musl
@@ -261,7 +248,7 @@ FULL_MUSL_CONFIG += CC="$(XGCC)" \
 	LIBCC="../obj_gcc/$(TARGET)/libgcc/libgcc.a" \
 	AR="$(XAR)" RANLIB="$(XRANLIB)"
 
-# LDFLAGS dont add -static --static
+# dont add -static --static
 FULL_MINGW_PTHREADS_CONFIG += RC="$(XRC)" \
 	CC="$(XGCC)" \
 	CXX="$(XGXX)" \
@@ -301,9 +288,8 @@ SYSROOT =
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(TARGET)
 FULL_GCC_CONFIG += --build=$(BUILD) --host=$(TARGET)
 
-# LDFLAGS dont add -static --static
-FULL_MINGW_PTHREADS_CONFIG += LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib $(LDFLAGS)"
-FULL_MINGW_CRT_CONFIG += LDFLAGS="-L$(CURDIR)/obj_sysroot/$(TARGET)/lib $(LDFLAGS)"
+# dont add -static --static
+FULL_MINGW_PTHREADS_CONFIG += CC="$(CROSS_CC)"
 
 obj_gcc/gcc/.lc_built: | obj_sysroot/.lc_headers
 
@@ -534,7 +520,7 @@ src_kernel_headers: | $(LINUX_SRCDIR)
 	ln -sf "$(LINUX_SRCDIR)" $@
 obj_kernel_headers/.lc_built: | src_kernel_headers
 	mkdir -p $(CURDIR)/obj_kernel_headers/staged
-	cd src_kernel_headers && $(MAKE) $(MAKE_ARGS) ARCH=$(LINUX_ARCH) O=$(CURDIR)/obj_kernel_headers INSTALL_HDR_PATH=$(CURDIR)/obj_kernel_headers/staged HOSTCC="$(NATIVE_CC)" headers_install
+	cd src_kernel_headers && $(MAKE) $(MAKE_ARGS) ARCH=$(LINUX_ARCH) O=$(CURDIR)/obj_kernel_headers INSTALL_HDR_PATH=$(CURDIR)/obj_kernel_headers/staged HOSTCC="$(NATIVE_CC) $(STAT)" headers_install
 	find obj_kernel_headers/staged/include '(' -name .install -o -name ..install.cmd ')' -exec rm {} +
 	touch $@
 install-kernel-headers: | obj_kernel_headers/.lc_built

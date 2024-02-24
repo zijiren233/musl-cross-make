@@ -304,7 +304,7 @@ int main()
         echo "test cross compiler error"
         return 1
     else
-        rm buildtest
+        rm buildtest*
         echo "test cross compiler success"
         return
     fi

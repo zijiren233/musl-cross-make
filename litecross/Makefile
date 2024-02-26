@@ -44,27 +44,9 @@ LIBTOOL = $(XBINUTILS_DIR)/libtool
 
 -include config.mak
 
-NATIVE_CC := $(CC)
-NATIVE_CXX := $(CXX)
-CROSS_CC := $(TARGET)-gcc
-CROSS_CXX := $(TARGET)-g++
 CFLAGS := $(strip $(COMMON_FLAGS) $(CFLAGS))
 CXXFLAGS := $(strip $(COMMON_FLAGS) $(CXXFLAGS))
-COMMON_MAKE_ARGS += LDFLAGS="$(LDFLAGS) $(STAT)" \
-	CC_FOR_BUILD="$(NATIVE_CC) $(STAT)" CXX_FOR_BUILD="$(NATIVE_CXX) $(STAT)" \
-	CFLAGS_FOR_BUILD="$(CFLAGS)" CXXFLAGS_FOR_BUILD="$(CXXFLAGS)" LDFLAGS_FOR_BUILD="$(LDFLAGS) $(STAT)"
 
-ifeq ($(NATIVE),)
-# build cross
-export CC = $(NATIVE_CC)
-export CXX = $(NATIVE_CXX)
-else
-# build native
-export CC = $(CROSS_CC)
-export CXX = $(CROSS_CXX)
-endif
-export CC += $(STAT)
-export CXX += $(STAT)
 export CFLAGS
 export CXXFLAGS
 export LDFLAGS
@@ -156,6 +138,8 @@ MUSL_SRCDIR :=
 LINUX_SRCDIR := 
 
 GCC_CONFIG_FOR_TARGET += --disable-sjlj-exceptions \
+	--disable-dw2-exceptions \
+	--enable-fully-dynamic-string \
 	--enable-threads=posix
 ifneq ($(findstring x86_64,$(TARGET)),)
 # 64
@@ -248,7 +232,6 @@ FULL_MUSL_CONFIG += CC="$(XGCC)" \
 	LIBCC="../obj_gcc/$(TARGET)/libgcc/libgcc.a" \
 	AR="$(XAR)" RANLIB="$(XRANLIB)"
 
-# dont add -static --static
 FULL_MINGW_PTHREADS_CONFIG += RC="$(XRC)" \
 	CC="$(XGCC)" \
 	CXX="$(XGXX)" \
@@ -288,9 +271,8 @@ SYSROOT =
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(TARGET)
 FULL_GCC_CONFIG += --build=$(BUILD) --host=$(TARGET)
 
-# dont add -static --static
-FULL_MINGW_PTHREADS_CONFIG += CC="$(CROSS_CC)"
-
+# prevent parallelization of obj_musl/.lc_built and obj_sysroot/.lc_headers
+obj_musl/.lc_built: | obj_sysroot/.lc_headers
 obj_gcc/gcc/.lc_built: | obj_sysroot/.lc_headers
 
 endif
@@ -388,6 +370,20 @@ obj_sysroot/lib32: | obj_sysroot
 obj_sysroot/lib64: | obj_sysroot
 	ln -sf lib $@
 
+ifneq ($(NATIVE),)
+obj_gcc/.lc_configured: export CC:=$(TARGET)-gcc $(STAT)
+obj_gcc/.lc_configured: export CXX:=$(TARGET)-g++ $(STAT)
+obj_binutils/.lc_configured: export CC:=$(TARGET)-gcc $(STAT)
+obj_binutils/.lc_configured: export CXX:=$(TARGET)-g++ $(STAT)
+else
+obj_gcc/.lc_configured: export CC:=$(CC) $(STAT)
+obj_gcc/.lc_configured: export CXX:=$(CXX) $(STAT)
+obj_binutils/.lc_configured: export CC:=$(CC) $(STAT)
+obj_binutils/.lc_configured: export CXX:=$(CXX) $(STAT)
+endif
+obj_gcc/.lc_configured: export LDFLAGS:=$(LDFLAGS) $(STAT)
+obj_binutils/.lc_configured: export LDFLAGS:=$(LDFLAGS) $(STAT)
+
 obj_binutils/.lc_configured: | obj_binutils src_binutils
 	cd obj_binutils && ../src_binutils/configure $(FULL_BINUTILS_CONFIG) || (cat config.log && exit 1)
 	touch $@
@@ -449,7 +445,7 @@ obj_sysroot/.lc_libs: | obj_musl/.lc_built
 endif
 
 obj_gcc/.lc_built: | obj_sysroot/.lc_libs obj_sysroot/.lc_headers
-obj_gcc/.lc_built: | obj_gcc/.lc_configured obj_gcc/gcc/.lc_built
+obj_gcc/.lc_built: | obj_gcc/gcc/.lc_built
 	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)"
 	touch $@
 
@@ -520,7 +516,7 @@ src_kernel_headers: | $(LINUX_SRCDIR)
 	ln -sf "$(LINUX_SRCDIR)" $@
 obj_kernel_headers/.lc_built: | src_kernel_headers
 	mkdir -p $(CURDIR)/obj_kernel_headers/staged
-	cd src_kernel_headers && $(MAKE) $(MAKE_ARGS) ARCH=$(LINUX_ARCH) O=$(CURDIR)/obj_kernel_headers INSTALL_HDR_PATH=$(CURDIR)/obj_kernel_headers/staged HOSTCC="$(NATIVE_CC) $(STAT)" headers_install
+	cd src_kernel_headers && $(MAKE) $(MAKE_ARGS) ARCH=$(LINUX_ARCH) O=$(CURDIR)/obj_kernel_headers INSTALL_HDR_PATH=$(CURDIR)/obj_kernel_headers/staged HOSTCC="$(CC) $(STAT)" headers_install
 	find obj_kernel_headers/staged/include '(' -name .install -o -name ..install.cmd ')' -exec rm {} +
 	touch $@
 install-kernel-headers: | obj_kernel_headers/.lc_built

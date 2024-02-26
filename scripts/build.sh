@@ -325,7 +325,7 @@ function Build() {
             NATIVE=""
             WriteConfig
         }
-        $MAKE tmpclean
+        $MAKE clean
         rm -rf "${CROSS_DIST_NAME}" "${CROSS_LOG_FILE}"
         while IFS= read -r line; do
             CURRENT_DATE=$(Date)
@@ -369,11 +369,9 @@ function Build() {
         {
             OUTPUT="${NATIVE_DIST_NAME}"
             NATIVE="true"
-            WriteConfig "export PATH := ${CROSS_DIST_NAME}/bin:\$(PATH)"
+            WriteConfig "export PATH=${CROSS_DIST_NAME}/bin:$PATH"
         }
-        if [ "$ONLY_NATIVE_BUILD" ]; then
-            $MAKE tmpclean
-        fi
+        $MAKE clean
         rm -rf "${NATIVE_DIST_NAME}" "${NATIVE_LOG_FILE}"
         while IFS= read -r line; do
             CURRENT_DATE=$(Date)

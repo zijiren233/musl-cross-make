@@ -106,10 +106,6 @@ while getopts ":p:i:RNEI:C:S:" opt; do
         find "$OPTARG" -path "$OPTARG/*" -prune -exec sh -c 'ln -sf "$@" .' sh {} +
         gotcmd=1
         ;;
-    C)
-        cp -a "$OPTARG"/* .
-        gotcmd=1
-        ;;
     S)
         cowp "$OPTARG"
         gotcmd=1

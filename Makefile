@@ -74,30 +74,10 @@ SRC_DIRS = gcc-$(GCC_VER) binutils-$(BINUTILS_VER) \
 all:
 
 clean:
-	( cd $(CURDIR) && rm -rf gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-* )
-
-tmpclean:
-	( cd $(CURDIR) && \
-	find . -maxdepth 1 \( \
-    	-name "gcc-*" \
-    	-o -name "binutils-*" \
-    	-o -name "musl-*" \
-    	-o -name "gmp-*" \
-    	-o -name "mpc-*" \
-    	-o -name "mpfr-*" \
-    	-o -name "isl-*" \
-    	-o -name "build" \
-    	-o -name "build-*" \
-    	-o -name "linux-*" \
-    	-o -name "mingw-w64-*" \
-	\) \
-	! -name "*.orig" \
-	-type d \
-	-exec echo rm -rf {} \; \
-	-exec rm -rf {} + )
+	rm -rf gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-*
 
 distclean: clean
-	( cd $(CURDIR) && rm -rf sources )
+	rm -rf sources
 
 check:
 	@echo "check bzip2"
@@ -213,7 +193,7 @@ ifeq ($(SOURCES_ONLY),)
 	case "$@" in */*) exit 1 ;; esac
 	rm -rf $@.tmp
 	mkdir $@.tmp
-	( cd $@.tmp && $(COWPATCH) -C ../$< )
+	( cd $@.tmp && $(COWPATCH) -I ../$< )
 	if [ -d patches/$@ ] && [ -n "$(shell find patches/$@ -type f)" ]; then \
 		if [ -z "$(findstring mingw,$(TARGET))" ]; then \
 			cat $(filter-out %-mingw.diff,$(wildcard patches/$@/*)) | ( cd $@.tmp && $(COWPATCH) -p1 ); \

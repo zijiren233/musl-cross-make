@@ -364,10 +364,13 @@ obj_sysroot/include:
 obj_sysroot/usr: | obj_sysroot
 	ln -sf . $@
 
-obj_sysroot/lib32: | obj_sysroot
+obj_sysroot/lib:
+	mkdir -p $@
+
+obj_sysroot/lib32: | obj_sysroot/lib
 	ln -sf lib $@
 
-obj_sysroot/lib64: | obj_sysroot
+obj_sysroot/lib64: | obj_sysroot/lib
 	ln -sf lib $@
 
 ifneq ($(NATIVE),)

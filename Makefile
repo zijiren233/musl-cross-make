@@ -4,7 +4,7 @@ CONFIG_SUB_REV = 28ea239c53a2
 CONFIG_GUESS_REV = 28ea239c53a2
 GCC_VER = 13.2.0
 MUSL_VER = 1.2.4
-BINUTILS_VER = 2.42
+BINUTILS_VER = 2.41
 GMP_VER = 6.3.0
 MPC_VER = 1.3.1
 MPFR_VER = 4.2.1
@@ -32,7 +32,7 @@ MUSL_REPO = https://git.musl-libc.org/cgit/musl
 LINUX_HEADERS_SITE = https://ftp.barfooze.de/pub/sabotage/tarballs
 
 ifneq ($(CHINA),)
-MUSL_SITE = https://sources.buildroot.net/musl
+MUSL_SITE = https://musl.libc.org/releases
 
 GNU_SITE = https://mirrors.ustc.edu.cn/gnu
 
@@ -74,10 +74,27 @@ SRC_DIRS = gcc-$(GCC_VER) binutils-$(BINUTILS_VER) \
 all:
 
 clean:
-	rm -rf gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-*
+	( cd $(CURDIR) && \
+	find . -maxdepth 1 \( \
+    	-name "gcc-*" \
+    	-o -name "binutils-*" \
+    	-o -name "musl-*" \
+    	-o -name "gmp-*" \
+    	-o -name "mpc-*" \
+    	-o -name "mpfr-*" \
+    	-o -name "isl-*" \
+    	-o -name "build" \
+    	-o -name "build-*" \
+    	-o -name "linux-*" \
+    	-o -name "mingw-w64-*" \
+	\) \
+	! -name "*.orig" \
+	-type d \
+	-exec echo rm -rf {} \; \
+	-exec rm -rf {} + )
 
-distclean: clean
-	rm -rf sources
+distclean:
+	( cd $(CURDIR) && rm -rf sources gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-* )
 
 check:
 	@echo "check bzip2"
@@ -193,7 +210,7 @@ ifeq ($(SOURCES_ONLY),)
 	case "$@" in */*) exit 1 ;; esac
 	rm -rf $@.tmp
 	mkdir $@.tmp
-	( cd $@.tmp && $(COWPATCH) -I ../$< )
+	( cd $@.tmp && $(COWPATCH) -C ../$< )
 	if [ -d patches/$@ ] && [ -n "$(shell find patches/$@ -type f)" ]; then \
 		if [ -z "$(findstring mingw,$(TARGET))" ]; then \
 			cat $(filter-out %-mingw.diff,$(wildcard patches/$@/*)) | ( cd $@.tmp && $(COWPATCH) -p1 ); \

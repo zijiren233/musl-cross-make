@@ -156,7 +156,7 @@ MAKE += INFO_DEPS= infodir=
 MAKE += ac_cv_prog_lex_root=lex.yy
 MAKE += MAKEINFO=false
 
-COMMON_CONFIG := --target=$(TARGET) --prefix= \
+COMMON_CONFIG := --target=$(TARGET) --prefix=/ \
 	--with-sysroot=$(SYSROOT) --libdir=/lib \
 	--disable-werror \
 	--disable-multilib \
@@ -194,17 +194,17 @@ FULL_GCC_CONFIG = $(COMMON_CONFIG) \
 	$(OVERRIDE)
 
 FULL_MUSL_CONFIG = $(MUSL_CONFIG) \
-	--prefix= --host=$(TARGET)
+	--prefix=/ --host=$(TARGET)
 
 FULL_MINGW_HEADERS_CONFIG = $(MINGW_CONFIG) $(MINGW_HEADERS_CONFIG) \
-	--prefix= --host=$(TARGET) --enable-sdk=all \
+	--prefix=/ --host=$(TARGET) --enable-sdk=all \
 	--enable-idl --enable-secure-api --with-sysroot=$(SYSROOT)
 
 FULL_MINGW_CRT_CONFIG = $(MINGW_CONFIG) $(MINGW_CRT_CONFIG) \
-	--prefix= --host=$(TARGET) --with-sysroot=$(SYSROOT)
+	--prefix=/ --host=$(TARGET) --with-sysroot=$(SYSROOT)
 
 FULL_MINGW_PTHREADS_CONFIG = $(MINGW_CONFIG) \
-	--prefix= --host=$(TARGET) --with-sysroot=$(SYSROOT)
+	--prefix=/ --host=$(TARGET) --with-sysroot=$(SYSROOT)
 
 ifeq ($(BUILD),)
 GUESS = $(shell cd $(GCC_SRCDIR) && ./config.guess)

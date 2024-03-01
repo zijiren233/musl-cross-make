@@ -89,8 +89,8 @@ function Init() {
     {
         DEFAULT_CONFIG_SUB_REV="28ea239c53a2"
         DEFAULT_GCC_VER="13.2.0"
-        DEFAULT_MUSL_VER="1.2.4"
-        DEFAULT_BINUTILS_VER="2.42"
+        DEFAULT_MUSL_VER="1.2.5"
+        DEFAULT_BINUTILS_VER="2.41"
         DEFAULT_GMP_VER="6.3.0"
         DEFAULT_MPC_VER="1.3.1"
         DEFAULT_MPFR_VER="4.2.1"
@@ -236,9 +236,13 @@ function FixArgs() {
         exit $?
     fi
 
-    if [ ! "$OPTIMIZE_LEVEL" ]; then
-        OPTIMIZE_LEVEL="s"
-    fi
+    # only support O2 and Os
+    case "$OPTIMIZE_LEVEL" in
+    "s") ;;
+    *)
+        OPTIMIZE_LEVEL="2"
+        ;;
+    esac
 }
 
 function Date() {

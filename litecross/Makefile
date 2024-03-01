@@ -460,8 +460,6 @@ install-binutils: | obj_binutils/.lc_built
 
 install-gcc: | obj_gcc/.lc_built
 	cd obj_gcc && $(MAKE) $(MAKE_ARGS) $(COMMON_MAKE_ARGS) $(GCC_MAKE_ARGS) MAKE="$(MAKE) $(TOOLCHAIN_MAKE_ARGS)" DESTDIR=$(DESTDIR)$(OUTPUT) install
-	ln -sf $(TARGET)-gcc $(DESTDIR)$(OUTPUT)/bin/$(TARGET)-cc
-	if [ -n "$(NATIVE)" ]; then ln -sf $(TARGET)-gcc $(DESTDIR)$(OUTPUT)/bin/cc; fi
 
 obj_mingw_headers/.lc_configured: | obj_mingw_headers src_mingw
 	cd obj_mingw_headers && ../src_mingw/mingw-w64-headers/configure $(FULL_MINGW_HEADERS_CONFIG) || (cat config.log && exit 1)

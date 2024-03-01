@@ -12,8 +12,15 @@ MINGW_HEADERS_CONFIG =
 TOOLCHAIN_CONFIG = 
 OPTIMIZE_LEVEL = 
 COMMON_FLAGS = -g0 -pipe -Wno-error -w
-CC = gcc
-CXX = g++
+
+ifeq ($(OS),Windows_NT)
+EXE_EXT = .exe
+else
+EXE_EXT =
+endif
+
+CC = gcc$(EXE_EXT)
+CXX = g++$(EXE_EXT)
 CFLAGS = 
 CXXFLAGS = 
 LDFLAGS = -s
@@ -25,22 +32,22 @@ STAT = -static --static
 endif
 
 XGCC_DIR = $(CURDIR)/obj_gcc/gcc
-XGCC = $(XGCC_DIR)/xgcc -B $(XGCC_DIR) -B $(CURDIR)/obj_sysroot/$(TARGET)/lib
-XCPP = $(XGCC_DIR)/cpp -B $(XGCC_DIR)
-XGXX = $(XGCC_DIR)/xg++
-XAS = $(CURDIR)/obj_binutils/gas/as-new
-XLD = $(CURDIR)/obj_binutils/ld/ld-new
+XGCC = $(XGCC_DIR)/xgcc$(EXE_EXT) -B $(XGCC_DIR) -B $(CURDIR)/obj_sysroot/$(TARGET)/lib
+XCPP = $(XGCC_DIR)/cpp$(EXE_EXT) -B $(XGCC_DIR)
+XGXX = $(XGCC_DIR)/xg++$(EXE_EXT)
+XAS = $(CURDIR)/obj_binutils/gas/as-new$(EXE_EXT)
+XLD = $(CURDIR)/obj_binutils/ld/ld-new$(EXE_EXT)
 XBINUTILS_DIR = $(CURDIR)/obj_binutils/binutils
-XAR = $(XBINUTILS_DIR)/ar
-XNM = $(XBINUTILS_DIR)/nm-new
-XOBJCOPY = $(XBINUTILS_DIR)/objcopy
-XOBJDUMP = $(XBINUTILS_DIR)/objdump
-XRANLIB = $(XBINUTILS_DIR)/ranlib
-XREADELF = $(XBINUTILS_DIR)/readelf
-XSTRIP = $(XBINUTILS_DIR)/strip-new
-XRC = $(XBINUTILS_DIR)/windres --preprocessor=$(XGCC_DIR)/xgcc --preprocessor-arg=-B --preprocessor-arg=$(XGCC_DIR) --preprocessor-arg=-I$(CURDIR)/obj_sysroot/$(TARGET)/include --preprocessor-arg=-E --preprocessor-arg=-xc-header --preprocessor-arg=-DRC_INVOKED -c 1252
-DLLTOOL = $(XBINUTILS_DIR)/dlltool
-LIBTOOL = $(XBINUTILS_DIR)/libtool
+XAR = $(XBINUTILS_DIR)/ar$(EXE_EXT)
+XNM = $(XBINUTILS_DIR)/nm-new$(EXE_EXT)
+XOBJCOPY = $(XBINUTILS_DIR)/objcopy$(EXE_EXT)
+XOBJDUMP = $(XBINUTILS_DIR)/objdump$(EXE_EXT)
+XRANLIB = $(XBINUTILS_DIR)/ranlib$(EXE_EXT)
+XREADELF = $(XBINUTILS_DIR)/readelf$(EXE_EXT)
+XSTRIP = $(XBINUTILS_DIR)/strip-new$(EXE_EXT)
+XRC = $(XBINUTILS_DIR)/windres$(EXE_EXT) --preprocessor=$(XGCC_DIR)/xgcc$(EXE_EXT) --preprocessor-arg=-B --preprocessor-arg=$(XGCC_DIR) --preprocessor-arg=-I$(CURDIR)/obj_sysroot/$(TARGET)/include --preprocessor-arg=-E --preprocessor-arg=-xc-header --preprocessor-arg=-DRC_INVOKED -c 1252
+DLLTOOL = $(XBINUTILS_DIR)/dlltool$(EXE_EXT)
+LIBTOOL = $(XBINUTILS_DIR)/libtool$(EXE_EXT)
 
 -include config.mak
 
@@ -156,7 +163,7 @@ MAKE += INFO_DEPS= infodir=
 MAKE += ac_cv_prog_lex_root=lex.yy
 MAKE += MAKEINFO=false
 
-COMMON_CONFIG := --target=$(TARGET) --prefix=/ \
+COMMON_CONFIG := --target=$(TARGET) --prefix= --exec-prefix= --datarootdir=/share \
 	--with-sysroot=$(SYSROOT) --libdir=/lib \
 	--disable-werror \
 	--disable-multilib \
@@ -194,17 +201,17 @@ FULL_GCC_CONFIG = $(COMMON_CONFIG) \
 	$(OVERRIDE)
 
 FULL_MUSL_CONFIG = $(MUSL_CONFIG) \
-	--prefix=/ --host=$(TARGET)
+	--prefix= --exec-prefix= --host=$(TARGET)
 
 FULL_MINGW_HEADERS_CONFIG = $(MINGW_CONFIG) $(MINGW_HEADERS_CONFIG) \
-	--prefix=/ --host=$(TARGET) --enable-sdk=all \
+	--prefix= --exec-prefix= --host=$(TARGET) --enable-sdk=all \
 	--enable-idl --enable-secure-api --with-sysroot=$(SYSROOT)
 
 FULL_MINGW_CRT_CONFIG = $(MINGW_CONFIG) $(MINGW_CRT_CONFIG) \
-	--prefix=/ --host=$(TARGET) --with-sysroot=$(SYSROOT)
+	--prefix= --exec-prefix= --host=$(TARGET) --with-sysroot=$(SYSROOT)
 
 FULL_MINGW_PTHREADS_CONFIG = $(MINGW_CONFIG) \
-	--prefix=/ --host=$(TARGET) --with-sysroot=$(SYSROOT)
+	--prefix= --exec-prefix= --host=$(TARGET) --with-sysroot=$(SYSROOT)
 
 ifeq ($(BUILD),)
 GUESS = $(shell cd $(GCC_SRCDIR) && ./config.guess)

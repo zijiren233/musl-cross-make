@@ -291,7 +291,7 @@ EOF
     done
 }
 
-function TestCrossCompiler() {
+function TestCrossCC() {
     COMPILER="$@"
     if [ -z "$COMPILER" ]; then
         echo "no compiler"
@@ -305,6 +305,30 @@ int main()
     return 0;
 }
 ' | $COMPILER -x c - -o buildtest; then
+        echo "test cross compiler error"
+        return 1
+    else
+        rm buildtest*
+        echo "test cross compiler success"
+        return
+    fi
+}
+
+
+function TestCrossCXX() {
+    COMPILER="$@"
+    if [ -z "$COMPILER" ]; then
+        echo "no compiler"
+        return 1
+    fi
+    echo "test cross compiler: $COMPILER"
+    if ! echo '#include <iostream>
+int main()
+{
+    std::cout << "hello world" << std::endl;
+    return 0;
+}
+' | $COMPILER -x c++ - -o buildtest; then
         echo "test cross compiler error"
         return 1
     else
@@ -360,7 +384,8 @@ function Build() {
             exit $EXIT_CODE
         else
             echo "build cross ${DIST_NAME_PREFIX}${TARGET} success"
-            TestCrossCompiler "${CROSS_DIST_NAME}/bin/${TARGET}-gcc -static --static"
+            TestCrossCC "${CROSS_DIST_NAME}/bin/${TARGET}-gcc -static --static"
+            TestCrossCXX "${CROSS_DIST_NAME}/bin/${TARGET}-g++ -static --static"
         fi
         if [ "$ENABLE_ARCHIVE" ]; then
             tar -zcf "${CROSS_DIST_NAME}.tgz" -C "${CROSS_DIST_NAME}" .

@@ -9,7 +9,6 @@ COMMON_CONFIG =
 GCC_CONFIG = 
 MINGW_CRT_CONFIG = 
 MINGW_HEADERS_CONFIG = 
-TOOLCHAIN_CONFIG = 
 OPTIMIZE_LEVEL = 
 COMMON_FLAGS = -g0 -pipe -Wno-error -w
 
@@ -163,9 +162,7 @@ MAKE += INFO_DEPS= infodir=
 MAKE += ac_cv_prog_lex_root=lex.yy
 MAKE += MAKEINFO=false
 
-COMMON_CONFIG := --target=$(TARGET) --prefix= --exec-prefix= --datarootdir=/share \
-	--with-sysroot=$(SYSROOT) --libdir=/lib \
-	--disable-werror \
+COMMON_CONFIG := --disable-werror \
 	--disable-multilib \
 	--disable-bootstrap \
 	--disable-nls \
@@ -193,25 +190,31 @@ ifneq ($(SIMPLER_BUILD),)
 COMMON_CONFIG += --disable-lto
 endif
 
-FULL_BINUTILS_CONFIG = $(COMMON_CONFIG) $(BINUTILS_CONFIG) $(TOOLCHAIN_CONFIG)
+# when prefix is empty, msys will set prefix to /usr in config.site
+export MSYSTEM_PREFIX=
 
-FULL_GCC_CONFIG = $(COMMON_CONFIG) \
-	$(GCC_CONFIG) $(GCC_CONFIG_FOR_TARGET) $(TOOLCHAIN_CONFIG) \
-	--with-build-sysroot=$(CURDIR)/obj_sysroot \
-	$(OVERRIDE)
+FULL_BINUTILS_CONFIG = $(COMMON_CONFIG) $(BINUTILS_CONFIG) \
+	--target=$(TARGET) --prefix= \
+	--with-sysroot=$(SYSROOT) \
+	$(BINTUILS_OVERRIDE)
+
+FULL_GCC_CONFIG = $(COMMON_CONFIG) $(GCC_CONFIG) $(GCC_CONFIG_FOR_TARGET) \
+	--target=$(TARGET) --prefix= \
+	--with-sysroot=$(SYSROOT) --with-build-sysroot=$(CURDIR)/obj_sysroot \
+	$(GCC_OVERRIDE)
 
 FULL_MUSL_CONFIG = $(MUSL_CONFIG) \
-	--prefix= --exec-prefix= --host=$(TARGET)
+	--prefix= --host=$(TARGET)
 
 FULL_MINGW_HEADERS_CONFIG = $(MINGW_CONFIG) $(MINGW_HEADERS_CONFIG) \
-	--prefix= --exec-prefix= --host=$(TARGET) --enable-sdk=all \
+	--prefix= --host=$(TARGET) --enable-sdk=all \
 	--enable-idl --enable-secure-api --with-sysroot=$(SYSROOT)
 
 FULL_MINGW_CRT_CONFIG = $(MINGW_CONFIG) $(MINGW_CRT_CONFIG) \
-	--prefix= --exec-prefix= --host=$(TARGET) --with-sysroot=$(SYSROOT)
+	--prefix= --host=$(TARGET) --with-sysroot=$(SYSROOT)
 
 FULL_MINGW_PTHREADS_CONFIG = $(MINGW_CONFIG) \
-	--prefix= --exec-prefix= --host=$(TARGET) --with-sysroot=$(SYSROOT)
+	--prefix= --host=$(TARGET) --with-sysroot=$(SYSROOT)
 
 ifeq ($(BUILD),)
 GUESS = $(shell cd $(GCC_SRCDIR) && ./config.guess)
@@ -381,10 +384,10 @@ obj_sysroot/lib64: | obj_sysroot/lib
 	ln -sf lib $@
 
 ifneq ($(NATIVE),)
-obj_gcc/.lc_configured: export CC:=$(TARGET)-gcc $(STAT)
-obj_gcc/.lc_configured: export CXX:=$(TARGET)-g++ $(STAT)
-obj_binutils/.lc_configured: export CC:=$(TARGET)-gcc $(STAT)
-obj_binutils/.lc_configured: export CXX:=$(TARGET)-g++ $(STAT)
+obj_gcc/.lc_configured: export CC:=$(TARGET)-gcc$(EXE_EXT) $(STAT)
+obj_gcc/.lc_configured: export CXX:=$(TARGET)-g++$(EXE_EXT) $(STAT)
+obj_binutils/.lc_configured: export CC:=$(TARGET)-gcc$(EXE_EXT) $(STAT)
+obj_binutils/.lc_configured: export CXX:=$(TARGET)-g++$(EXE_EXT) $(STAT)
 else
 obj_gcc/.lc_configured: export CC:=$(CC) $(STAT)
 obj_gcc/.lc_configured: export CXX:=$(CXX) $(STAT)

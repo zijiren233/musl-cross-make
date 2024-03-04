@@ -86,9 +86,12 @@ else
 STAT = -static --static
 endif
 
-COMMON_FLAGS = -g0 -pipe -Wno-error -w
+COMMON_FLAGS = -O2 -g0 -pipe -Wno-error -w
 COMMON_LD_FLAGS = -s
 EXE_LD_FLAGS = $(COMMON_LD_FLAGS) $(STAT)
+
+export CFLAGS = $(COMMON_FLAGS)
+export CXXFLAGS = $(COMMON_FLAGS)
 
 # DLLVM_ENABLE_PROJECTS='clang;clang-tools-extra;cross-project-tests;libc;libclc;lld;lldb;openmp;polly;pstl'
 # DLLVM_ENABLE_RUNTIMES='compiler-rt;libc;libcxx;libcxxabi;libunwind;openmp'
@@ -101,11 +104,14 @@ FULL_LLVM_CONFIG = $(LLVM_CONFIG) \
 	-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
 	-DLLVM_ENABLE_WARNINGS=OFF \
 	-DLLVM_ENABLE_ZLIB=FORCE_ON \
-	-DZLIB_LIBRARY=$(CURDIR)/obj_zlib/libz.a \
-	-DZLIB_INCLUDE_DIR=$(CURDIR)/src_zlib \
+	-DZLIB_LIBRARY=$(CURDIR)/obj_zlib/lib/libz.a \
+	-DZLIB_INCLUDE_DIR=$(CURDIR)/obj_zlib/include \
 	-DLLVM_ENABLE_ZSTD=FORCE_ON \
 	-Dzstd_LIBRARY=$(CURDIR)/obj_zstd/libzstd.a \
 	-Dzstd_INCLUDE_DIR=$(CURDIR)/obj_zstd \
+	-DLLVM_ENABLE_LIBXML2=FORCE_ON \
+	-DLIBXML2_LIBRARY=$(CURDIR)/obj_libxml2/lib/libxml2.a \
+	-DLIBXML2_INCLUDE_DIR=$(CURDIR)/obj_libxml2/include/libxml2 \
 	-DLLVM_ENABLE_BACKTRACES=OFF \
 	-DLLVM_INCLUDE_BENCHMARKS=OFF \
 	-DLLVM_INCLUDE_EXAMPLES=OFF \
@@ -192,10 +198,14 @@ src_zlib: | $(ZLIB_SRCDIR)
 src_zstd: | $(ZSTD_SRCDIR)
 	ln -sf $(ZSTD_SRCDIR) $@
 
+src_libxml2: | $(LIBXML2_SRCDIR)
+	ln -sf $(LIBXML2_SRCDIR) $@
+	rm -f $@/test/icu_parse_test.xml
+
 %/:
 	mkdir -p $@
 
-obj_llvm/.lc_configured: | obj_llvm/ src_llvm obj_zlib/.lc_built obj_zstd/.lc_built
+obj_llvm/.lc_configured: | obj_llvm/ src_llvm obj_zlib/.lc_built obj_zstd/.lc_built obj_libxml2/.lc_built
 	cd obj_llvm && cmake -G "Ninja" $(FULL_LLVM_CONFIG) ../src_llvm/llvm
 	touch $@
 
@@ -233,7 +243,8 @@ obj_zlib/.lc_configured: | obj_zlib/ src_zlib
 	touch $@
 
 obj_zlib/.lc_built: | obj_zlib/.lc_configured
-	cd obj_zlib && $(MAKE)
+	mkdir -p obj_zlib/include obj_zlib/lib
+	cd obj_zlib && $(MAKE) DESTDIR=$(CURDIR)/obj_zlib install
 	touch $@
 
 obj_zstd/.lc_built: export CC := $(CC)
@@ -241,6 +252,36 @@ obj_zstd/.lc_built: | obj_zstd/ src_zstd
 	cd src_zstd && $(MAKE) lib
 	cp src_zstd/lib/libzstd.a obj_zstd/
 	cp src_zstd/lib/zstd.h obj_zstd/
+	touch $@
+
+obj_libxml2/.lc_configured: export CC := $(CC)
+obj_libxml2/.lc_configured: | obj_libxml2/ src_libxml2 obj_zlib/.lc_built
+	cd obj_libxml2 && ../src_libxml2/configure \
+		--prefix= \
+		--host=`../src_libxml2/config.guess` \
+		--disable-shared \
+		--enable-static \
+		--disable-dependency-tracking \
+		--without-catalog \
+		--without-debug \
+		--without-mem-debug \
+		--without-modules \
+		--without-ftp \
+		--without-http \
+		--without-html \
+		--without-iconv \
+		--without-history \
+		--without-legacy \
+		--without-python \
+		--without-readline \
+		--without-modules \
+		--without-lzma \
+		--with-zlib=$(CURDIR)/obj_zlib
+	touch $@
+
+obj_libxml2/.lc_built: | obj_libxml2/.lc_configured
+	mkdir -p obj_libxml2/include obj_libxml2/lib
+	cd obj_libxml2 && $(MAKE) install DESTDIR=$(CURDIR)/obj_libxml2
 	touch $@
 
 # Some configure tests for llvm runtimes fail without crtbegin and

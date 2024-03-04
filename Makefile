@@ -16,6 +16,7 @@ LINUX_VER = 6.6.9
 MINGW_VER = v11.0.1
 ZLIB_VER = 1.3.1
 ZSTD_VER = 1.5.5
+LIBXML2_VER = 2.12.5
 CHINA = 
 
 # curl --progress-bar -Lo <file> <url>
@@ -26,7 +27,7 @@ COWPATCH = $(CURDIR)/cowpatch.sh
 
 HOST = $(if $(NATIVE),$(TARGET))
 BUILD_DIR = build-$(COMPILER)/$(if $(HOST),$(HOST),local)/$(TARGET)
-OUTPUT = $(CURDIR)/output$(if $(HOST),-$(HOST))
+OUTPUT = $(CURDIR)/output$(COMPILER)$(if $(HOST),-$(HOST))
 
 REL_TOP = ../..$(if $(TARGET),/..)
 
@@ -47,7 +48,7 @@ GCC_SNAP ?= https://mirrors.tuna.tsinghua.edu.cn/sourceware/gcc/snapshots
 
 LINUX_SITE ?= https://mirrors.ustc.edu.cn/kernel.org/linux/kernel
 
-ISL_SITE ?= https://sources.buildroot.net/isl
+LIBXML2_SITE ?= https://mirrors.ustc.edu.cn/gnome/sources/libxml2
 else
 MUSL_SITE ?= https://musl.libc.org/releases
 
@@ -58,6 +59,8 @@ SOURCEFORGE_MIRROT ?= https://downloads.sourceforge.net
 GCC_SNAP ?= https://sourceware.org/pub/gcc/snapshots
 
 LINUX_SITE ?= https://cdn.kernel.org/pub/linux/kernel
+
+LIBXML2_SITE ?= https://download.gnome.org/sources/libxml2
 endif
 
 GITHUB ?= https://github.com
@@ -77,6 +80,7 @@ ifeq ($(COMPILER),gcc)
 override LLVM_VER = 
 override ZLIB_VER = 
 override ZSTD_VER = 
+override LIBXML2_VER = 
 
 else
 
@@ -102,7 +106,8 @@ SRC_DIRS = $(if $(GCC_VER),gcc-$(GCC_VER)) \
     $(if $(MINGW_VER),mingw-w64-$(MINGW_VER)) \
 	$(if $(LLVM_VER),llvm-project-$(LLVM_VER).src) \
 	$(if $(ZLIB_VER),zlib-$(ZLIB_VER)) \
-	$(if $(ZSTD_VER),zstd-$(ZSTD_VER))
+	$(if $(ZSTD_VER),zstd-$(ZSTD_VER)) \
+	$(if $(LIBXML2_VER),libxml2-$(LIBXML2_VER))
 
 all:
 
@@ -123,6 +128,7 @@ clean:
     	-o -name "llvm-project-*" \
 		-o -name "zlib-*" \
 		-o -name "zstd-*" \
+		-o -name "libxml2-*" \
 	\) \
 	! -name "*.orig" \
 	-type d \
@@ -130,7 +136,7 @@ clean:
 	-exec rm -rf {} + )
 
 distclean:
-	( cd $(CURDIR) && rm -rf sources gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-* llvm-project-* zlib-* zstd-* )
+	( cd $(CURDIR) && rm -rf sources gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-* llvm-project-* zlib-* zstd-* libxml2-* )
 
 check:
 	@echo "check bzip2"
@@ -171,6 +177,7 @@ $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/mingw-w64*)): SITE = $(M
 $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/llvm-project-*)): SITE = $(LLVM_SITE)/llvmorg-$(patsubst llvm-project-%.src,%,$(basename $(basename $(notdir $@))))
 $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/zlib-*)): SITE = $(ZLIB_SITE)
 $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/zstd-*)): SITE = $(ZSTD_SITE)/v$(patsubst zstd-%.tar.gz,%,$(notdir $@))
+$(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/libxml2-*)): SITE = $(LIBXML2_SITE)/$(shell echo $(patsubst libxml2-%.tar.xz,%,$(notdir $@)) | cut -d. -f1,2)
 
 $(SOURCES):
 	mkdir -p $@
@@ -305,6 +312,7 @@ $(BUILD_DIR)/config.mak: | $(BUILD_DIR)
 	$(if $(LLVM_VER),"LLVM_VER = $(LLVM_VER)") \
 	$(if $(ZLIB_VER),"ZLIB_SRCDIR = $(REL_TOP)/zlib-$(ZLIB_VER)") \
 	$(if $(ZSTD_VER),"ZSTD_SRCDIR = $(REL_TOP)/zstd-$(ZSTD_VER)") \
+	$(if $(LIBXML2_VER),"LIBXML2_SRCDIR = $(REL_TOP)/libxml2-$(LIBXML2_VER)") \
 	"-include $(REL_TOP)/config.mak"
 
 ifeq ($(COMPILER),)

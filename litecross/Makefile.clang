@@ -100,8 +100,12 @@ FULL_LLVM_CONFIG = $(LLVM_CONFIG) \
 	-DLLVM_ENABLE_RTTI=ON \
 	-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
 	-DLLVM_ENABLE_WARNINGS=OFF \
-	-DLLVM_ENABLE_ZLIB=OFF \
-	-DLLVM_ENABLE_ZSTD=OFF \
+	-DLLVM_ENABLE_ZLIB=FORCE_ON \
+	-DZLIB_LIBRARY=$(CURDIR)/obj_zlib/libz.a \
+	-DZLIB_INCLUDE_DIR=$(CURDIR)/src_zlib \
+	-DLLVM_ENABLE_ZSTD=FORCE_ON \
+	-Dzstd_LIBRARY=$(CURDIR)/obj_zstd/libzstd.a \
+	-Dzstd_INCLUDE_DIR=$(CURDIR)/obj_zstd \
 	-DLLVM_ENABLE_BACKTRACES=OFF \
 	-DLLVM_INCLUDE_BENCHMARKS=OFF \
 	-DLLVM_INCLUDE_EXAMPLES=OFF \
@@ -182,10 +186,16 @@ src_musl: | $(MUSL_SRCDIR)
 src_kernel_headers: | $(LINUX_SRCDIR)
 	ln -sf "$(LINUX_SRCDIR)" $@
 
+src_zlib: | $(ZLIB_SRCDIR)
+	ln -sf $(ZLIB_SRCDIR) $@
+
+src_zstd: | $(ZSTD_SRCDIR)
+	ln -sf $(ZSTD_SRCDIR) $@
+
 %/:
 	mkdir -p $@
 
-obj_llvm/.lc_configured: | obj_llvm/ src_llvm
+obj_llvm/.lc_configured: | obj_llvm/ src_llvm obj_zlib/.lc_built obj_zstd/.lc_built
 	cd obj_llvm && cmake -G "Ninja" $(FULL_LLVM_CONFIG) ../src_llvm/llvm
 	touch $@
 
@@ -215,6 +225,22 @@ obj_llvm/.lc_built_2: | $(foreach t,$(TARGETS),obj_sysroot/$(t)/.lc_headers)
 obj_musl/%/.lc_built: | obj_musl/%/.lc_configured obj_llvm/.lc_built_2
 	cd obj_musl/$* && $(MAKE) AR=../../obj_llvm/bin/llvm-ar \
 				  RANLIB=../../obj_llvm/bin/llvm-ranlib
+	touch $@
+
+obj_zlib/.lc_configured: export CC := $(CC)
+obj_zlib/.lc_configured: | obj_zlib/ src_zlib
+	cd obj_zlib && ../src_zlib/configure --prefix= --static
+	touch $@
+
+obj_zlib/.lc_built: | obj_zlib/.lc_configured
+	cd obj_zlib && $(MAKE)
+	touch $@
+
+obj_zstd/.lc_built: export CC := $(CC)
+obj_zstd/.lc_built: | obj_zstd/ src_zstd
+	cd src_zstd && $(MAKE) lib
+	cp src_zstd/lib/libzstd.a obj_zstd/
+	cp src_zstd/lib/zstd.h obj_zstd/
 	touch $@
 
 # Some configure tests for llvm runtimes fail without crtbegin and

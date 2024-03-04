@@ -14,6 +14,8 @@ MPFR_VER = 4.2.1
 ISL_VER = 0.26
 LINUX_VER = 6.6.9
 MINGW_VER = v11.0.1
+ZLIB_VER = 1.3.1
+ZSTD_VER = 1.5.5
 CHINA = 
 
 # curl --progress-bar -Lo <file> <url>
@@ -57,6 +59,8 @@ GCC_SNAP ?= https://sourceware.org/pub/gcc/snapshots
 
 LINUX_SITE ?= https://cdn.kernel.org/pub/linux/kernel
 endif
+
+GITHUB ?= https://github.com
 GCC_SITE ?= $(GNU_SITE)/gcc
 BINUTILS_SITE ?= $(GNU_SITE)/binutils
 GMP_SITE ?= $(GNU_SITE)/gmp
@@ -64,11 +68,15 @@ MPC_SITE ?= $(GNU_SITE)/mpc
 MPFR_SITE ?= $(GNU_SITE)/mpfr
 ISL_SITE ?= $(SOURCEFORGE_MIRROT)/project/libisl
 MINGW_SITE ?= $(SOURCEFORGE_MIRROT)/project/mingw-w64/mingw-w64/mingw-w64-release
-LLVM_SITE ?= https://github.com/llvm/llvm-project/releases/download
+LLVM_SITE ?= $(GITHUB)/llvm/llvm-project/releases/download
+ZLIB_SITE ?= https://zlib.net
+ZSTD_SITE ?= $(GITHUB)/facebook/zstd/releases/download
 
 ifeq ($(COMPILER),gcc)
 
 override LLVM_VER = 
+override ZLIB_VER = 
+override ZSTD_VER = 
 
 else
 
@@ -92,7 +100,9 @@ SRC_DIRS = $(if $(GCC_VER),gcc-$(GCC_VER)) \
 	$(if $(ISL_VER),isl-$(ISL_VER)) \
 	$(if $(LINUX_VER),linux-$(LINUX_VER)) \
     $(if $(MINGW_VER),mingw-w64-$(MINGW_VER)) \
-	$(if $(LLVM_VER),llvm-project-$(LLVM_VER).src)
+	$(if $(LLVM_VER),llvm-project-$(LLVM_VER).src) \
+	$(if $(ZLIB_VER),zlib-$(ZLIB_VER)) \
+	$(if $(ZSTD_VER),zstd-$(ZSTD_VER))
 
 all:
 
@@ -111,6 +121,8 @@ clean:
     	-o -name "linux-*" \
     	-o -name "mingw-w64-*" \
     	-o -name "llvm-project-*" \
+		-o -name "zlib-*" \
+		-o -name "zstd-*" \
 	\) \
 	! -name "*.orig" \
 	-type d \
@@ -118,7 +130,7 @@ clean:
 	-exec rm -rf {} + )
 
 distclean:
-	( cd $(CURDIR) && rm -rf sources gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-* llvm-project-* )
+	( cd $(CURDIR) && rm -rf sources gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-* llvm-project-* zlib-* zstd-* )
 
 check:
 	@echo "check bzip2"
@@ -157,6 +169,8 @@ $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-2.6*)): SITE = $(L
 $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-headers-*)): SITE = $(LINUX_HEADERS_SITE)
 $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/mingw-w64*)): SITE = $(MINGW_SITE)
 $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/llvm-project-*)): SITE = $(LLVM_SITE)/llvmorg-$(patsubst llvm-project-%.src,%,$(basename $(basename $(notdir $@))))
+$(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/zlib-*)): SITE = $(ZLIB_SITE)
+$(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/zstd-*)): SITE = $(ZSTD_SITE)/v$(patsubst zstd-%.tar.gz,%,$(notdir $@))
 
 $(SOURCES):
 	mkdir -p $@
@@ -289,6 +303,8 @@ $(BUILD_DIR)/config.mak: | $(BUILD_DIR)
 	$(if $(MINGW_VER),"MINGW_SRCDIR = $(REL_TOP)/mingw-w64-$(MINGW_VER)") \
 	$(if $(LLVM_VER),"LLVM_SRCDIR = $(REL_TOP)/llvm-project-$(LLVM_VER).src") \
 	$(if $(LLVM_VER),"LLVM_VER = $(LLVM_VER)") \
+	$(if $(ZLIB_VER),"ZLIB_SRCDIR = $(REL_TOP)/zlib-$(ZLIB_VER)") \
+	$(if $(ZSTD_VER),"ZSTD_SRCDIR = $(REL_TOP)/zstd-$(ZSTD_VER)") \
 	"-include $(REL_TOP)/config.mak"
 
 ifeq ($(COMPILER),)

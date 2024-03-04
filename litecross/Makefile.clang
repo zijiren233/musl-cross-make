@@ -172,11 +172,12 @@ FULL_LLVM_CONFIG = $(LLVM_CONFIG) \
 
 all: llvm musl
 
-install: install-llvm install-musl install-kernel-headers install-configs install-symlinks
+install: install-llvm install-musl install-zlib install-kernel-headers install-configs install-symlinks
 
 llvm: | obj_llvm/.lc_built_3
 musl: | $(foreach t,$(TARGETS),obj_musl/$(t)/.lc_built)
 install-musl: $(foreach t,$(TARGETS),install-musl_$(t))
+install-zlib: $(foreach t,$(TARGETS),install-zlib_$(t))
 install-kernel-headers: $(foreach t,$(TARGETS),install-kernel-headers_$(t))
 install-configs: $(foreach t,$(TARGETS),install-configs_$(t))
 install-symlinks: $(foreach t,$(TARGETS),install-symlinks_$(t))
@@ -240,6 +241,15 @@ obj_musl/%/.lc_built: | obj_musl/%/.lc_configured obj_llvm/.lc_built_2
 obj_zlib/.lc_configured: export CC := $(CC)
 obj_zlib/.lc_configured: | obj_zlib/ src_zlib
 	cd obj_zlib && ../src_zlib/configure --prefix= --static
+	touch $@
+
+obj_zlib/%/.lc_configured: export CC = $(DESTDIR)$(OUTPUT)/bin/$*-clang
+obj_zlib/%/.lc_configured: | obj_zlib/%/ src_zlib install-llvm
+	cd obj_zlib/$* && ../../src_zlib/configure --prefix= --static
+	touch $@
+
+obj_zlib/%/.lc_built: | obj_zlib/%/.lc_configured
+	cd obj_zlib/$* && $(MAKE)
 	touch $@
 
 obj_zlib/.lc_built: | obj_zlib/.lc_configured
@@ -313,6 +323,9 @@ install-llvm: | obj_llvm/.lc_built_3
 
 install-musl_%: | obj_musl/%/.lc_built
 	cd obj_musl/$* && $(MAKE) $(MUSL_VARS) DESTDIR=$(DESTDIR)$(OUTPUT)/$* install
+
+install-zlib_%: | obj_zlib/%/.lc_built
+	cd obj_zlib/$* && $(MAKE) DESTDIR=$(DESTDIR)$(OUTPUT)/$* install
 
 install-kernel-headers_%: | obj_kernel_headers/%/.lc_built
 	mkdir -p $(DESTDIR)$(OUTPUT)/$*/include

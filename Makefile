@@ -1,7 +1,10 @@
 SOURCES = sources
 
+COMPILER = gcc
+
 CONFIG_SUB_REV = 28ea239c53a2
 CONFIG_GUESS_REV = 28ea239c53a2
+LLVM_VER = 17.0.6
 GCC_VER = 13.2.0
 MUSL_VER = 1.2.4
 BINUTILS_VER = 2.41
@@ -20,10 +23,10 @@ SHA1_CMD = sha1sum -c
 COWPATCH = $(CURDIR)/cowpatch.sh
 
 HOST = $(if $(NATIVE),$(TARGET))
-BUILD_DIR = build/$(if $(HOST),$(HOST),local)/$(TARGET)
+BUILD_DIR = build-$(COMPILER)/$(if $(HOST),$(HOST),local)/$(TARGET)
 OUTPUT = $(CURDIR)/output$(if $(HOST),-$(HOST))
 
-REL_TOP = ../../..
+REL_TOP = ../..$(if $(TARGET),/..)
 
 -include config.mak
 
@@ -32,44 +35,64 @@ MUSL_REPO = https://git.musl-libc.org/cgit/musl
 LINUX_HEADERS_SITE = https://ftp.barfooze.de/pub/sabotage/tarballs
 
 ifneq ($(CHINA),)
-MUSL_SITE = https://musl.libc.org/releases
+MUSL_SITE ?= https://musl.libc.org/releases
 
-GNU_SITE = https://mirrors.ustc.edu.cn/gnu
+GNU_SITE ?= https://mirrors.ustc.edu.cn/gnu
 
-SOURCEFORGE_MIRROT = https://jaist.dl.sourceforge.net
+SOURCEFORGE_MIRROT ?= https://jaist.dl.sourceforge.net
 
-GCC_SNAP = https://mirrors.tuna.tsinghua.edu.cn/sourceware/gcc/snapshots
+GCC_SNAP ?= https://mirrors.tuna.tsinghua.edu.cn/sourceware/gcc/snapshots
 
-LINUX_SITE = https://mirrors.ustc.edu.cn/kernel.org/linux/kernel
+LINUX_SITE ?= https://mirrors.ustc.edu.cn/kernel.org/linux/kernel
 
-ISL_SITE = https://sources.buildroot.net/isl
+ISL_SITE ?= https://sources.buildroot.net/isl
 else
-MUSL_SITE = https://musl.libc.org/releases
+MUSL_SITE ?= https://musl.libc.org/releases
 
-GNU_SITE = https://ftp.gnu.org/gnu
+GNU_SITE ?= https://ftp.gnu.org/gnu
 
-SOURCEFORGE_MIRROT = https://downloads.sourceforge.net
+SOURCEFORGE_MIRROT ?= https://downloads.sourceforge.net
 
-GCC_SNAP = https://sourceware.org/pub/gcc/snapshots
+GCC_SNAP ?= https://sourceware.org/pub/gcc/snapshots
 
-LINUX_SITE = https://cdn.kernel.org/pub/linux/kernel
+LINUX_SITE ?= https://cdn.kernel.org/pub/linux/kernel
 endif
-GCC_SITE = $(GNU_SITE)/gcc
-BINUTILS_SITE = $(GNU_SITE)/binutils
-GMP_SITE = $(GNU_SITE)/gmp
-MPC_SITE = $(GNU_SITE)/mpc
-MPFR_SITE = $(GNU_SITE)/mpfr
-ISL_SITE = $(SOURCEFORGE_MIRROT)/project/libisl
-MINGW_SITE = $(SOURCEFORGE_MIRROT)/project/mingw-w64/mingw-w64/mingw-w64-release
+GCC_SITE ?= $(GNU_SITE)/gcc
+BINUTILS_SITE ?= $(GNU_SITE)/binutils
+GMP_SITE ?= $(GNU_SITE)/gmp
+MPC_SITE ?= $(GNU_SITE)/mpc
+MPFR_SITE ?= $(GNU_SITE)/mpfr
+ISL_SITE ?= $(SOURCEFORGE_MIRROT)/project/libisl
+MINGW_SITE ?= $(SOURCEFORGE_MIRROT)/project/mingw-w64/mingw-w64/mingw-w64-release
+LLVM_SITE ?= https://github.com/llvm/llvm-project/releases/download
 
-SRC_DIRS = gcc-$(GCC_VER) binutils-$(BINUTILS_VER) \
+ifeq ($(COMPILER),gcc)
+
+override LLVM_VER = 
+
+else
+
+override TARGET = 
+override GCC_VER = 
+override GMP_VER = 
+override MPC_VER =
+override MPFR_VER =
+override ISL_VER =
+override BINUTILS_VER =
+override MINGW_VER = 
+
+endif
+
+SRC_DIRS = $(if $(GCC_VER),gcc-$(GCC_VER)) \
+	$(if $(BINUTILS_VER),binutils-$(BINUTILS_VER)) \
     $(if $(MUSL_VER),musl-$(MUSL_VER)) \
 	$(if $(GMP_VER),gmp-$(GMP_VER)) \
 	$(if $(MPC_VER),mpc-$(MPC_VER)) \
 	$(if $(MPFR_VER),mpfr-$(MPFR_VER)) \
 	$(if $(ISL_VER),isl-$(ISL_VER)) \
 	$(if $(LINUX_VER),linux-$(LINUX_VER)) \
-    $(if $(MINGW_VER),mingw-w64-$(MINGW_VER))
+    $(if $(MINGW_VER),mingw-w64-$(MINGW_VER)) \
+	$(if $(LLVM_VER),llvm-project-$(LLVM_VER).src)
 
 all:
 
@@ -87,6 +110,7 @@ clean:
     	-o -name "build-*" \
     	-o -name "linux-*" \
     	-o -name "mingw-w64-*" \
+    	-o -name "llvm-project-*" \
 	\) \
 	! -name "*.orig" \
 	-type d \
@@ -94,7 +118,7 @@ clean:
 	-exec rm -rf {} + )
 
 distclean:
-	( cd $(CURDIR) && rm -rf sources gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-* )
+	( cd $(CURDIR) && rm -rf sources gcc-* binutils-* musl-* gmp-* mpc-* mpfr-* isl-* build build-* linux-* mingw-w64-* llvm-project-* )
 
 check:
 	@echo "check bzip2"
@@ -132,6 +156,7 @@ $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-3*)): SITE = $(LIN
 $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-2.6*)): SITE = $(LINUX_SITE)/v2.6
 $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/linux-headers-*)): SITE = $(LINUX_HEADERS_SITE)
 $(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/mingw-w64*)): SITE = $(MINGW_SITE)
+$(patsubst hashes/%.sha1,$(SOURCES)/%,$(wildcard hashes/llvm-project-*)): SITE = $(LLVM_SITE)/llvmorg-$(patsubst llvm-project-%.src,%,$(basename $(basename $(notdir $@))))
 
 $(SOURCES):
 	mkdir -p $@
@@ -224,7 +249,6 @@ ifeq ($(SOURCES_ONLY),)
 	( cd $@.tmp && find -L . -name configfsf.guess -type f -exec cp -f $(CURDIR)/$(SOURCES)/config.guess {} \; -exec chmod +x {} \; )
 	rm -rf $@
 	mv $@.tmp $@
-	$(COWPATCH) -S gcc-$(GCC_VER)/libstdc++-v3
 
 ifneq ($(findstring mingw,$(TARGET)),)
 extract_all: | $(filter-out linux-% musl-%,$(SRC_DIRS))
@@ -244,26 +268,18 @@ $(foreach dir,$(notdir $(basename $(basename $(basename $(wildcard hashes/*)))))
 
 # Rules for building.
 
-ifeq ($(TARGET),)
-
-all:
-	@echo TARGET must be set via config.mak or command line.
-	@exit 1
-
-else
-
 $(BUILD_DIR):
 	mkdir -p $@
 
 $(BUILD_DIR)/Makefile: | $(BUILD_DIR)
-	ln -sf $(REL_TOP)/litecross/Makefile $@
+	ln -sf $(REL_TOP)/litecross/Makefile.$(COMPILER) $@
 
 $(BUILD_DIR)/config.mak: | $(BUILD_DIR)
 	printf >$@ '%s\n' \
-	"TARGET = $(TARGET)" \
 	"HOST = $(HOST)" \
-	"GCC_SRCDIR = $(REL_TOP)/gcc-$(GCC_VER)" \
-	"BINUTILS_SRCDIR = $(REL_TOP)/binutils-$(BINUTILS_VER)" \
+	$(if $(TARGET),"TARGET = $(TARGET)") \
+	$(if $(GCC_VER),"GCC_SRCDIR = $(REL_TOP)/gcc-$(GCC_VER)") \
+	$(if $(BINUTILS_VER),"BINUTILS_SRCDIR = $(REL_TOP)/binutils-$(BINUTILS_VER)") \
 	$(if $(MUSL_VER),"MUSL_SRCDIR = $(REL_TOP)/musl-$(MUSL_VER)") \
 	$(if $(GMP_VER),"GMP_SRCDIR = $(REL_TOP)/gmp-$(GMP_VER)") \
 	$(if $(MPC_VER),"MPC_SRCDIR = $(REL_TOP)/mpc-$(MPC_VER)") \
@@ -271,7 +287,23 @@ $(BUILD_DIR)/config.mak: | $(BUILD_DIR)
 	$(if $(ISL_VER),"ISL_SRCDIR = $(REL_TOP)/isl-$(ISL_VER)") \
 	$(if $(LINUX_VER),"LINUX_SRCDIR = $(REL_TOP)/linux-$(LINUX_VER)") \
 	$(if $(MINGW_VER),"MINGW_SRCDIR = $(REL_TOP)/mingw-w64-$(MINGW_VER)") \
+	$(if $(LLVM_VER),"LLVM_SRCDIR = $(REL_TOP)/llvm-project-$(LLVM_VER).src") \
+	$(if $(LLVM_VER),"LLVM_VER = $(LLVM_VER)") \
 	"-include $(REL_TOP)/config.mak"
+
+ifeq ($(COMPILER),)
+
+all:
+	@echo COMPILER must be set via config.mak or command line.
+	@exit 1
+
+else ifeq ($(COMPILER)$(TARGET),gcc)
+
+all:
+	@echo TARGET must be set for gcc build via config.mak or command line.
+	@exit 1
+
+else
 
 all: | extract_all $(BUILD_DIR) $(BUILD_DIR)/Makefile $(BUILD_DIR)/config.mak
 	cd $(BUILD_DIR) && $(MAKE) $@

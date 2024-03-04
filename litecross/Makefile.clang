@@ -1,0 +1,281 @@
+
+OUTPUT = $(CURDIR)/output-clang
+
+LLVM_SRCDIR = LLVM_SRCDIR_not_set
+MUSL_SRCDIR = MUSL_SRCDIR_not_set
+
+TARGETS = \
+	aarch64-linux-musl \
+	armv6-linux-musleabi \
+	armv6-linux-musleabihf \
+	armv7-linux-musleabi \
+	armv7-linux-musleabihf \
+	loongarch64-linux-musl \
+	powerpc64-linux-musl \
+	powerpc64le-linux-musl \
+	riscv64-linux-musl \
+	i586-linux-musl \
+	i686-linux-musl \
+	x86_64-linux-musl \
+	# end
+
+TARGET_CONFIG_armv7-linux-musleabihf = -mfpu=vfpv3
+
+# $(foreach t,$(TARGETS), \
+# $(if $(findstring mips,$(t)),$(eval TARGET_CONFIG_$(t) = -fno-PIC -no-pie )) \
+# )
+
+DEFAULT_TARGET = x86_64-linux-musl
+
+TOOLS = \
+	llvm-ar \
+	llvm-nm \
+	llvm-objcopy \
+	llvm-objdump \
+	llvm-ranlib \
+	llvm-size \
+	llvm-strip \
+	llvm-readobj \
+	llvm-strings \
+	llvm-rc \
+	# end
+
+-include config.mak
+
+# llvm 13.0.0 switched to using normalized target triples for runtimes.
+#
+define normalise_target
+$(if $(findstring $(words $(subst -, ,$(1))),3),$(subst -linux-musl,-unknown-linux-musl,$(1)),$(1))
+endef
+
+define normalise_targets
+$(foreach t,$(1),$(call normalise_target,$(t)))
+endef
+
+fn_major_version = $(firstword $(subst ., ,$(1)))
+
+# https://github.com/llvm/llvm-project/tree/main/llvm/lib/Target
+llvm_target_map = \
+	aarch64%:AArch64 \
+	arm%:ARM \
+	i%86:X86 \
+	mips%:Mips \
+	powerpc%:PowerPC \
+	riscv%:RISCV \
+	s390%:SystemZ \
+	x86_64:X86 \
+	loongarch%:LoongArch \
+	m68k:M68k \
+	# end
+
+define llvm_target
+$(or
+  $(filter-out !%,
+    $(foreach m,$(llvm_target_map),
+      $(patsubst !$(word 1,$(subst :, ,$(m))),$(word 2,$(subst :, ,$(m))),!$(call fn_target_arch,$(1))))),
+  $(error Cannot determine LLVM target architecture for target $(1)))
+endef
+
+define llvm_targets
+$(sort $(foreach t,$(1),$(call llvm_target,$(t))))
+endef
+
+ifeq ($(shell uname -s),Darwin)
+STAT = 
+else
+STAT = -static --static
+endif
+
+COMMON_FLAGS = -g0 -pipe -Wno-error -w
+COMMON_LD_FLAGS = -s
+EXE_LD_FLAGS = $(COMMON_LD_FLAGS) $(STAT)
+
+# DLLVM_ENABLE_PROJECTS='clang;clang-tools-extra;cross-project-tests;libc;libclc;lld;lldb;openmp;polly;pstl'
+# DLLVM_ENABLE_RUNTIMES='compiler-rt;libc;libcxx;libcxxabi;libunwind;openmp'
+FULL_LLVM_CONFIG = $(LLVM_CONFIG) \
+	-Wno-dev \
+	-DCLANG_PLUGIN_SUPPORT=ON \
+	-DLIBCLANG_BUILD_STATIC=ON \
+	-DCLANG_DEFAULT_PIE_ON_LINUX=ON \
+	-DLLVM_ENABLE_RTTI=ON \
+	-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
+	-DLLVM_ENABLE_WARNINGS=OFF \
+	-DLLVM_ENABLE_ZLIB=OFF \
+	-DLLVM_ENABLE_ZSTD=OFF \
+	-DLLVM_ENABLE_BACKTRACES=OFF \
+	-DLLVM_INCLUDE_BENCHMARKS=OFF \
+	-DLLVM_INCLUDE_EXAMPLES=OFF \
+	-DLLVM_INCLUDE_TESTS=OFF \
+	-DLLVM_BUILD_TESTS=ON \
+	-DCMAKE_C_FLAGS="$(COMMON_FLAGS)" \
+	-DCMAKE_CXX_FLAGS="$(COMMON_FLAGS)" \
+	-DCMAKE_EXE_LINKER_FLAGS="$(EXE_LD_FLAGS)" \
+	-DLLVM_STATIC_LINK_CXX_STDLIB=ON \
+	-DBUILD_SHARED_LIBS=OFF \
+	-DLLVM_BUILD_LLVM_DYLIB=OFF \
+	-DLLVM_LINK_LLVM_DYLIB=OFF \
+	-DCLANG_DEFAULT_CXX_STDLIB=libc++ \
+	-DCLANG_DEFAULT_LINKER=lld \
+	-DCLANG_DEFAULT_OBJCOPY=llvm-objcopy \
+	-DCLANG_DEFAULT_RTLIB=compiler-rt \
+	-DCMAKE_BUILD_TYPE=MinSizeRel \
+	-DCMAKE_INSTALL_PREFIX=/clang \
+	-DDEFAULT_SYSROOT=../../TARGET \
+	-DLLVM_BUILTIN_TARGETS='$(subst $(subst ,, ),;,$(call normalise_targets,$(TARGETS)))' \
+	-DLLVM_DEFAULT_TARGET_TRIPLE=$(DEFAULT_TARGET) \
+	-DLLVM_DISTRIBUTION_COMPONENTS='clang;clang-resource-headers;lld;LTO;$(subst $(subst ,, ),;,$(TOOLS))' \
+	-DLLVM_ENABLE_PROJECTS='clang;clang-tools-extra;lld' \
+	-DLLVM_ENABLE_RUNTIMES='compiler-rt;libcxx;libcxxabi;libunwind' \
+	-DLLVM_INSTALL_TOOLCHAIN_ONLY=ON \
+	-DLLVM_RUNTIME_TARGETS='$(subst $(subst ,, ),;,$(call normalise_targets,$(TARGETS)))' \
+	-DLLVM_TARGETS_TO_BUILD='$(subst $(subst ,, ),;,$(call llvm_targets,$(TARGETS)))' \
+	$(foreach t,$(TARGETS),-DBUILTINS_$(call normalise_target,$(t))_CMAKE_SYSROOT=$(CURDIR)/obj_sysroot/$(t)) \
+	$(foreach t,$(TARGETS),-DBUILTINS_$(call normalise_target,$(t))_CMAKE_EXE_LINKER_FLAGS='$(EXE_LD_FLAGS) $(TARGET_CONFIG_$(t))') \
+	$(foreach t,$(TARGETS),-DBUILTINS_$(call normalise_target,$(t))_CMAKE_SHARED_LINKER_FLAGS='$(TARGET_CONFIG_$(t))') \
+	$(foreach t,$(TARGETS),-DBUILTINS_$(call normalise_target,$(t))_CMAKE_CXX_FLAGS='$(TARGET_CONFIG_$(t))') \
+	$(foreach t,$(TARGETS),-DBUILTINS_$(call normalise_target,$(t))_CMAKE_C_FLAGS='$(TARGET_CONFIG_$(t))') \
+	$(foreach t,$(TARGETS),-DBUILTINS_$(call normalise_target,$(t))_CMAKE_ASM_FLAGS='$(TARGET_CONFIG_$(t))') \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_CMAKE_EXE_LINKER_FLAGS='$(EXE_LD_FLAGS) $(TARGET_CONFIG_$(t))') \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_CMAKE_SHARED_LINKER_FLAGS='$(TARGET_CONFIG_$(t))') \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_CMAKE_CXX_FLAGS='$(TARGET_CONFIG_$(t)) -L$(CURDIR)/obj_musl/$(t)/lib -B$(CURDIR)/obj_musl/$(t)/lib -Qunused-arguments') \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_CMAKE_C_FLAGS='$(TARGET_CONFIG_$(t)) -L$(CURDIR)/obj_musl/$(t)/lib -B$(CURDIR)/obj_musl/$(t)/lib -Qunused-arguments') \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_CMAKE_ASM_FLAGS='$(TARGET_CONFIG_$(t))') \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_CMAKE_SYSROOT=$(CURDIR)/obj_sysroot/$(t)) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_COMPILER_RT_BUILD_LIBFUZZER=OFF) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_COMPILER_RT_BUILD_MEMPROF=OFF) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_COMPILER_RT_BUILD_PROFILE=OFF) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_COMPILER_RT_BUILD_SANITIZERS=OFF) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_COMPILER_RT_BUILD_XRAY=OFF) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_LIBCXXABI_ENABLE_SHARED=OFF) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_LIBCXXABI_ENABLE_STATIC_UNWINDER=ON) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_LIBCXXABI_INSTALL_LIBRARY=OFF) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_LIBCXXABI_USE_COMPILER_RT=ON) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_LIBCXXABI_USE_LLVM_UNWINDER=ON) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_LIBCXXABI_STATICALLY_LINK_UNWINDER_IN_SHARED_LIBRARY=ON) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_LIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_LIBCXX_HAS_MUSL_LIBC=ON) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_LIBCXX_USE_COMPILER_RT=ON) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_LIBUNWIND_ENABLE_SHARED=OFF) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_LIBUNWIND_INSTALL_LIBRARY=OFF) \
+	$(foreach t,$(TARGETS),-DRUNTIMES_$(call normalise_target,$(t))_LIBUNWIND_USE_COMPILER_RT=ON) \
+	# end
+
+all: llvm musl
+
+install: install-llvm install-musl install-kernel-headers install-configs install-symlinks
+
+llvm: | obj_llvm/.lc_built_3
+musl: | $(foreach t,$(TARGETS),obj_musl/$(t)/.lc_built)
+install-musl: $(foreach t,$(TARGETS),install-musl_$(t))
+install-kernel-headers: $(foreach t,$(TARGETS),install-kernel-headers_$(t))
+install-configs: $(foreach t,$(TARGETS),install-configs_$(t))
+install-symlinks: $(foreach t,$(TARGETS),install-symlinks_$(t))
+
+.PHONY: all llvm musl install-llvm install-musl install-kernel-headers install-configs install-symlinks clean
+
+src_llvm: | $(LLVM_SRCDIR)
+	ln -sf $(LLVM_SRCDIR) $@
+
+src_musl: | $(MUSL_SRCDIR)
+	ln -sf $(MUSL_SRCDIR) $@
+
+src_kernel_headers: | $(LINUX_SRCDIR)
+	ln -sf "$(LINUX_SRCDIR)" $@
+
+%/:
+	mkdir -p $@
+
+obj_llvm/.lc_configured: | obj_llvm/ src_llvm
+	cd obj_llvm && cmake -G "Ninja" $(FULL_LLVM_CONFIG) ../src_llvm/llvm
+	touch $@
+
+obj_llvm/.lc_built_1: | obj_llvm/.lc_configured
+	cd obj_llvm && ninja distribution
+	touch $@
+
+# llvm 16+ has only the major version number in the LIBCC path
+obj_musl/%/.lc_configured: | obj_musl/%/ src_musl obj_llvm/.lc_built_1
+	cd obj_musl/$* && ../../src_musl/configure \
+		--prefix= \
+		--target=$* \
+		--disable-wrapper \
+		LIBCC=../../obj_llvm/lib/clang/$(if $(intcmp $(call fn_major_version,$(LLVM_VER)),16),$(LLVM_VER),$(call fn_major_version,$(LLVM_VER)))/lib/$(call normalise_target,$*)/libclang_rt.builtins.a \
+		CC="../../obj_llvm/bin/clang --target=$* $(TARGET_CONFIG_$*)" \
+		$(MUSL_CONFIG) $(MUSL_CONFIG_$*)
+	touch $@
+
+obj_sysroot/%/.lc_headers: | obj_sysroot/ obj_musl/%/.lc_configured
+	cd obj_musl/$* && $(MAKE) DESTDIR=$(CURDIR)/obj_sysroot/$* install-headers
+	touch $@
+
+obj_llvm/.lc_built_2: | $(foreach t,$(TARGETS),obj_sysroot/$(t)/.lc_headers)
+	cd obj_llvm && ninja builtins
+	touch $@
+
+obj_musl/%/.lc_built: | obj_musl/%/.lc_configured obj_llvm/.lc_built_2
+	cd obj_musl/$* && $(MAKE) AR=../../obj_llvm/bin/llvm-ar \
+				  RANLIB=../../obj_llvm/bin/llvm-ranlib
+	touch $@
+
+# Some configure tests for llvm runtimes fail without crtbegin and
+# crtend files in the sysroot. The runtimes build generates these files
+# leading to a chicken-egg problem.
+obj_sysroot/%/.lc_crt_workaround:
+	mkdir -p obj_sysroot/$*/lib
+	cd obj_sysroot/$*/lib && touch crtbeginT.o crtbeginS.o crtbegin.o crtend.o crtendS.o
+	touch $@
+
+obj_kernel_headers/%/.lc_built: | src_kernel_headers
+	mkdir -p $(CURDIR)/obj_kernel_headers/$*/staged
+	cd src_kernel_headers && $(MAKE) ARCH=$(call fn_linux_arch,$*) O=$(CURDIR)/obj_kernel_headers/$* INSTALL_HDR_PATH=$(CURDIR)/obj_kernel_headers/$*/staged HOSTCC="$(CC) $(STAT)" headers_install
+	find obj_kernel_headers/$*/staged/include '(' -name .install -o -name ..install.cmd ')' -exec rm {} +
+	touch $@
+
+obj_sysroot/%/.lc_linux_headers: | obj_kernel_headers/%/.lc_built
+	mkdir -p obj_sysroot/$*/include
+	cp -R obj_kernel_headers/$*/staged/include/* obj_sysroot/$*/include
+
+obj_llvm/.lc_built_3: | $(foreach t,$(TARGETS),obj_musl/$(t)/.lc_built \
+							obj_sysroot/$(t)/.lc_crt_workaround \
+							obj_sysroot/$(t)/.lc_linux_headers)
+	cd obj_llvm && ninja runtimes
+	touch $@
+
+install-llvm: | obj_llvm/.lc_built_3
+	cd obj_llvm && DESTDIR=$(DESTDIR)$(OUTPUT) ninja install-distribution install-builtins install-runtimes
+
+install-musl_%: | obj_musl/%/.lc_built
+	cd obj_musl/$* && $(MAKE) $(MUSL_VARS) DESTDIR=$(DESTDIR)$(OUTPUT)/$* install
+
+install-kernel-headers_%: | obj_kernel_headers/%/.lc_built
+	mkdir -p $(DESTDIR)$(OUTPUT)/$*/include
+	cp -R obj_kernel_headers/$*/staged/include/* $(DESTDIR)$(OUTPUT)/$*/include
+
+install-configs_%: | $(DESDIR)$(OUTPUT)/clang/bin/
+	echo "--target=$* $(TARGET_CONFIG_$*)" > $(DESTDIR)$(OUTPUT)/clang/bin/$*-clang.cfg
+	echo "--target=$* $(TARGET_CONFIG_$*)" > $(DESTDIR)$(OUTPUT)/clang/bin/$*-clang++.cfg
+
+install-symlinks_%: | $(DESTDIR)$(OUTPUT)/bin/
+	cd $(DESTDIR)$(OUTPUT)/bin && ln -sf ../clang/bin/clang $*-clang
+	cd $(DESTDIR)$(OUTPUT)/bin && ln -sf ../clang/bin/clang++ $*-clang++
+	cd $(DESTDIR)$(OUTPUT)/bin && ln -sf ../clang/bin/clang-cpp $*-cpp
+	cd $(DESTDIR)$(OUTPUT)/bin && ln -sf ../clang/bin/clang $*-cc
+	cd $(DESTDIR)$(OUTPUT)/bin && ln -sf ../clang/bin/clang++ $*-c++
+	cd $(DESTDIR)$(OUTPUT)/bin && ln -sf ../clang/bin/ld.lld $*-ld
+	$(foreach t,$(TOOLS),cd $(DESTDIR)$(OUTPUT)/bin && ln -sf ../clang/bin/$(t) $*-$(subst llvm-,,$(t);))
+
+clean:
+	rm -rf src_* obj_*
+
+# $(call fn_linux_arch,target-triple)
+#	Determine linux architecture from target triple
+ifeq ($(LINUX_SRCDIR),)
+$(error LINUX_SRCDIR is required for llvm libc++ build)
+endif
+LINUX_ARCH_LIST := $(sort $(notdir $(wildcard $(LINUX_SRCDIR)/arch/*)))
+fn_target_arch = $(firstword $(subst -, ,$(1)))
+fn_target_arch_mangled = $(patsubst i%86,x86,$(patsubst aarch64%,arm64%,$(call fn_target_arch,$(1))))
+fn_linux_arch = $(lastword $(foreach a,$(LINUX_ARCH_LIST),$(if $(filter $(a)%,$(call fn_target_arch_mangled,$(1))),$(a))))
+
+.SECONDARY:
+

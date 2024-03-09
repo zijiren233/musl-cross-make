@@ -10,7 +10,7 @@ GCC_CONFIG =
 MINGW_CRT_CONFIG = 
 MINGW_HEADERS_CONFIG = 
 OPTIMIZE_LEVEL = 
-COMMON_FLAGS = -g0 -pipe -Wno-error -w
+COMMON_FLAGS = -O2 -g0 -pipe -Wno-error -w
 
 ifeq ($(OS),Windows_NT)
 EXE_EXT = .exe
@@ -121,6 +121,10 @@ endif
 
 ifneq ($(filter riscv64%,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-arch=rv64gc --with-abi=lp64d
+endif
+
+ifneq ($(filter loongarch64%,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-arch=loongarch64 --with-abi=lp64d
 endif
 
 ifneq ($(filter %n32,$(TARGET)),)

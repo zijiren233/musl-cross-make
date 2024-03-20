@@ -12,7 +12,7 @@ GMP_VER = 6.3.0
 MPC_VER = 1.3.1
 MPFR_VER = 4.2.1
 ISL_VER = 0.26
-LINUX_VER = 6.6.19
+LINUX_VER = 6.6.22
 MINGW_VER = v11.0.1
 ZLIB_VER = 1.3.1
 ZSTD_VER = 1.5.5
@@ -38,8 +38,6 @@ MUSL_REPO = https://git.musl-libc.org/cgit/musl
 LINUX_HEADERS_SITE = https://ftp.barfooze.de/pub/sabotage/tarballs
 
 ifneq ($(CHINA),)
-MUSL_SITE ?= https://musl.libc.org/releases
-
 GNU_SITE ?= https://mirrors.ustc.edu.cn/gnu
 
 SOURCEFORGE_MIRROT ?= https://jaist.dl.sourceforge.net
@@ -50,8 +48,6 @@ LINUX_SITE ?= https://mirrors.ustc.edu.cn/kernel.org/linux/kernel
 
 LIBXML2_SITE ?= https://mirrors.ustc.edu.cn/gnome/sources/libxml2
 else
-MUSL_SITE ?= https://musl.libc.org/releases
-
 GNU_SITE ?= https://ftp.gnu.org/gnu
 
 SOURCEFORGE_MIRROT ?= https://downloads.sourceforge.net
@@ -63,6 +59,7 @@ LINUX_SITE ?= https://cdn.kernel.org/pub/linux/kernel
 LIBXML2_SITE ?= https://download.gnome.org/sources/libxml2
 endif
 
+MUSL_SITE ?= https://musl.libc.org/releases
 GITHUB ?= https://github.com
 GCC_SITE ?= $(GNU_SITE)/gcc
 BINUTILS_SITE ?= $(GNU_SITE)/binutils

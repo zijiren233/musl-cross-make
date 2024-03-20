@@ -16,7 +16,7 @@ LINUX_VER = 6.6.22
 MINGW_VER = v11.0.1
 ZLIB_VER = 1.3.1
 ZSTD_VER = 1.5.5
-LIBXML2_VER = 2.12.5
+LIBXML2_VER = 2.12.6
 CHINA = 
 
 # curl --progress-bar -Lo <file> <url>

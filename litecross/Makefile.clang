@@ -14,6 +14,14 @@ TARGETS = \
 	powerpc64-linux-musl \
 	powerpc64le-linux-musl \
 	riscv64-linux-musl \
+	mips-linux-musl \
+	mips-linux-muslsf \
+	mipsel-linux-musl \
+	mipsel-linux-muslsf \
+	mips64-linux-musl \
+	mips64-linux-muslsf \
+	mips64el-linux-musl \
+	mips64el-linux-muslsf \
 	i586-linux-musl \
 	i686-linux-musl \
 	x86_64-linux-musl \
@@ -21,9 +29,11 @@ TARGETS = \
 
 TARGET_CONFIG_armv7-linux-musleabihf = -mfpu=vfpv3
 
-# $(foreach t,$(TARGETS), \
-# $(if $(findstring mips,$(t)),$(eval TARGET_CONFIG_$(t) = -fno-PIC -no-pie )) \
-# )
+# https://github.com/llvm/llvm-project/issues/58377
+# https://github.com/ziglang/zig/issues/4925
+$(foreach t,$(TARGETS), \
+$(if $(findstring mips,$(t)),$(eval TARGET_CONFIG_$(t) = -Wl,-z,notext )) \
+)
 
 DEFAULT_TARGET = x86_64-linux-musl
 

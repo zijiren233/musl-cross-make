@@ -196,6 +196,7 @@ endif
 
 # when prefix is empty, msys will set prefix to /usr in config.site
 export MSYSTEM_PREFIX=
+export MSYS=winsymlinks:nativestrict
 
 FULL_BINUTILS_CONFIG = $(COMMON_CONFIG) $(BINUTILS_CONFIG) \
 	--target=$(TARGET) --prefix= \

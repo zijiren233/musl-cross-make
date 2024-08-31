@@ -88,15 +88,15 @@ function Init() {
 
     {
         DEFAULT_CONFIG_SUB_REV="28ea239c53a2"
-        DEFAULT_GCC_VER="13.2.0"
+        DEFAULT_GCC_VER="14.2.0"
         DEFAULT_MUSL_VER="1.2.5"
-        DEFAULT_BINUTILS_VER="2.41"
+        DEFAULT_BINUTILS_VER="2.43.1"
         DEFAULT_GMP_VER="6.3.0"
         DEFAULT_MPC_VER="1.3.1"
         DEFAULT_MPFR_VER="4.2.1"
         DEFAULT_ISL_VER="0.26"
-        DEFAULT_LINUX_VER="6.6.28"
-        DEFAULT_MINGW_VER="v11.0.1"
+        DEFAULT_LINUX_VER="6.6.48"
+        DEFAULT_MINGW_VER="v12.0.0"
         if [ ! "$CONFIG_SUB_REV" ]; then
             CONFIG_SUB_REV="$DEFAULT_CONFIG_SUB_REV"
         fi

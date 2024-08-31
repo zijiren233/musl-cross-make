@@ -1,0 +1,31 @@
+diff --git a/gcc/config/riscv/linux.h b/gcc/config/riscv/linux.h
+index f8c2c351e5a..8d9881eadeb 100644
+--- a/gcc/config/riscv/linux.h
++++ b/gcc/config/riscv/linux.h
+@@ -60,11 +60,3 @@ along with GCC; see the file COPYING3.  If not see
+ 	%{rdynamic:-export-dynamic} \
+ 	-dynamic-linker " GNU_USER_DYNAMIC_LINKER "}} \
+     %{static:-static} %{static-pie:-static -pie --no-dynamic-linker -z text}}"
+-
+-#define STARTFILE_PREFIX_SPEC 			\
+-   "/lib" XLEN_SPEC "/" ABI_SPEC "/ "		\
+-   "/usr/lib" XLEN_SPEC "/" ABI_SPEC "/ "	\
+-   "/lib/ "					\
+-   "/usr/lib/ "
+-
+-#define RISCV_USE_CUSTOMISED_MULTI_LIB select_by_abi
+diff --git a/gcc/config/riscv/t-linux b/gcc/config/riscv/t-linux
+index 216d2776a18..1a8a863853e 100644
+--- a/gcc/config/riscv/t-linux
++++ b/gcc/config/riscv/t-linux
+@@ -1,3 +1,6 @@
+-# Only XLEN and ABI affect Linux multilib dir names, e.g. /lib32/ilp32d/
+-MULTILIB_DIRNAMES := $(patsubst rv32%,lib32,$(patsubst rv64%,lib64,$(MULTILIB_DIRNAMES)))
++MULTILIB_OPTIONS := march=rv64gc
++MULTILIB_DIRNAMES := rv64gc
++
++MULTILIB_DIRNAMES := $(patsubst rv32%,lib32,$(patsubst rv64%,lib,$(MULTILIB_DIRNAMES)))
+ MULTILIB_OSDIRNAMES := $(patsubst lib%,../lib%,$(MULTILIB_DIRNAMES))
++MULTILIB_MATCHES := march?rv64gc=march?rv64imafdc
+-- 
+2.41.0

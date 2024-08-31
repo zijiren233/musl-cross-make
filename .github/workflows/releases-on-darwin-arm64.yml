@@ -62,7 +62,7 @@ jobs:
             gpatch \
             coreutils \
             findutils \
-            gcc@12 \
+            gcc@14 \
             perl \
             libtool
 
@@ -76,7 +76,7 @@ jobs:
         run: |
           bash scripts/build.sh \
             -LDP \
-            -c "gcc-12" -x "g++-12" \
+            -c "gcc-14" -x "g++-14" \
             -T "${{ matrix.targets }}"
 
       - name: Archive

@@ -188,6 +188,7 @@ GCC_CONFIG := --enable-languages=c,c++ \
 	$(GCC_CONFIG)
 
 BINUTILS_CONFIG := --disable-gprofng \
+	--enable-shared \
 	$(BINUTILS_CONFIG)
 
 ifneq ($(SIMPLER_BUILD),)

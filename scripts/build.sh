@@ -439,31 +439,7 @@ function Build() {
     fi
 }
 
-ALL_TARGETS='aarch64-linux-musl
-armv5-linux-musleabi
-armv6-linux-musleabi
-armv6-linux-musleabihf
-armv7-linux-musleabi
-armv7-linux-musleabihf
-loongarch64-linux-musl
-mips-linux-musl
-mips-linux-muslsf
-mipsel-linux-musl
-mipsel-linux-muslsf
-mips64-linux-musl
-mips64-linux-muslsf
-mips64el-linux-musl
-mips64el-linux-muslsf
-powerpc64-linux-musl
-powerpc64le-linux-musl
-riscv64-linux-musl
-s390x-linux-musl
-i586-linux-musl
-i686-linux-musl
-x86_64-linux-musl
-i586-w64-mingw32
-i686-w64-mingw32
-x86_64-w64-mingw32'
+ALL_TARGETS='x86_64-w64-mingw32'
 
 function BuildAll() {
     if [ "$TARGETS_FILE" ]; then

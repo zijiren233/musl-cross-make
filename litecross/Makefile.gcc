@@ -153,9 +153,9 @@ GCC_CONFIG_FOR_TARGET += --disable-sjlj-exceptions \
 	--enable-threads=posix
 ifneq ($(findstring x86_64,$(TARGET)),)
 # 64
-MINGW_CRT_CONFIG += --disable-lib32 --enable-lib64
+# MINGW_CRT_CONFIG += --disable-lib32 --enable-lib64
 else
-MINGW_CRT_CONFIG += --enable-lib32 --disable-lib64
+# MINGW_CRT_CONFIG += --enable-lib32 --disable-lib64
 GCC_CONFIG_FOR_TARGET += --disable-tls
 endif
 

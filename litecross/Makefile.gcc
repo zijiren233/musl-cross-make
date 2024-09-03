@@ -102,7 +102,7 @@ endif
 ifneq ($(filter powerpc%,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --enable-secureplt
 ifneq ($(findstring 64,$(TARGET)),)
-GCC_CONFIG_FOR_TARGET += --with-abi=elfv2 --enable-targets=powerpcle-linux
+GCC_CONFIG_FOR_TARGET += --with-abi=elfv2 --enable-targets=powerpcle-linux --with-cpu=970
 endif
 endif
 
@@ -180,13 +180,14 @@ GCC_CONFIG := --enable-languages=c,c++ \
 	--disable-libmudflap --disable-libsanitizer \
 	--disable-gnu-indirect-function \
 	--disable-libmpx --disable-fixed-point \
-	--enable-libstdcxx-time=yes --disable-libstdcxx-pch \
+	--enable-libstdcxx-time=rt --enable-libstdcxx-time --disable-libstdcxx-pch \
 	--disable-libquadmath --disable-libquadmath-support \
 	--enable-libstdcxx-filesystem-ts=yes \
 	--enable-default-pie --enable-static-pie \
 	--disable-decimal-float \
 	$(GCC_CONFIG)
 
+# https://github.com/richfelker/musl-cross-make/issues/181
 BINUTILS_CONFIG := --disable-gprofng \
 	$(BINUTILS_CONFIG)
 
@@ -221,13 +222,17 @@ FULL_MINGW_CRT_CONFIG = $(MINGW_CONFIG) $(MINGW_CRT_CONFIG) \
 FULL_MINGW_PTHREADS_CONFIG = $(MINGW_CONFIG) \
 	--prefix= --host=$(TARGET) --with-sysroot=$(SYSROOT)
 
+ifneq ($(NATIVE),)
+HOST:=$(TARGET)
+endif
+
 ifeq ($(BUILD),)
 GUESS = $(shell cd $(GCC_SRCDIR) && ./config.guess)
 TARGET_CANON = $(shell cd $(GCC_SRCDIR) && ./config.sub $(TARGET))
 BUILD = $(GUESS)$(if $(subst $(TARGET_CANON),,$(GUESS)),,xx)
 endif
 
-ifeq ($(NATIVE),)
+ifeq ($(HOST),)
 # build cross
 SYSROOT = /$(TARGET)
 
@@ -283,8 +288,8 @@ else
 # build native
 SYSROOT = 
 
-FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(TARGET)
-FULL_GCC_CONFIG += --build=$(BUILD) --host=$(TARGET)
+FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(HOST)
+FULL_GCC_CONFIG += --build=$(BUILD) --host=$(HOST)
 
 # prevent parallelization of obj_musl/.lc_built and obj_sysroot/.lc_headers
 obj_musl/.lc_built: | obj_sysroot/.lc_headers
@@ -388,11 +393,11 @@ obj_sysroot/lib32: | obj_sysroot/lib
 obj_sysroot/lib64: | obj_sysroot/lib
 	ln -sf lib $@
 
-ifneq ($(NATIVE),)
-obj_gcc/.lc_configured: export CC:=$(TARGET)-gcc$(EXE_EXT) $(STAT)
-obj_gcc/.lc_configured: export CXX:=$(TARGET)-g++$(EXE_EXT) $(STAT)
-obj_binutils/.lc_configured: export CC:=$(TARGET)-gcc$(EXE_EXT) $(STAT)
-obj_binutils/.lc_configured: export CXX:=$(TARGET)-g++$(EXE_EXT) $(STAT)
+ifneq ($(HOST),)
+obj_gcc/.lc_configured: export CC:=$(HOST)-gcc$(EXE_EXT) $(STAT)
+obj_gcc/.lc_configured: export CXX:=$(HOST)-g++$(EXE_EXT) $(STAT)
+obj_binutils/.lc_configured: export CC:=$(HOST)-gcc$(EXE_EXT) $(STAT)
+obj_binutils/.lc_configured: export CXX:=$(HOST)-g++$(EXE_EXT) $(STAT)
 else
 obj_gcc/.lc_configured: export CC:=$(CC) $(STAT)
 obj_gcc/.lc_configured: export CXX:=$(CXX) $(STAT)

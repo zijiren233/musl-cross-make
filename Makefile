@@ -33,6 +33,11 @@ REL_TOP = ../..$(if $(TARGET),/..)
 
 -include config.mak
 
+ifneq ($(findstring mingw,$(TARGET)$(HOST)),)
+# mingw
+BINUTILS_VER = 2.41
+endif
+
 MUSL_REPO = https://git.musl-libc.org/cgit/musl
 
 LINUX_HEADERS_SITE = https://ftp.barfooze.de/pub/sabotage/tarballs

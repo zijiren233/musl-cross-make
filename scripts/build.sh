@@ -150,7 +150,7 @@ function Help() {
 }
 
 function ParseArgs() {
-    while getopts "haT:Cc:x:nLlO:j:NidDP" arg; do
+    while getopts "haT:Cc:x:nLlO:j:NdDP" arg; do
         case $arg in
         h)
             Help
@@ -194,9 +194,6 @@ function ParseArgs() {
                 echo "cpu number must be number"
                 exit 1
             fi
-            ;;
-        i)
-            SIMPLER_BUILD="true"
             ;;
         d)
             SOURCES_ONLY="true"
@@ -280,10 +277,6 @@ endif
 CHINA = ${USE_CHINA_MIRROR}
 
 COMMON_FLAGS += -O${OPTIMIZE_LEVEL}
-
-SIMPLER_BUILD = ${SIMPLER_BUILD}
-
-COMMON_CONFIG += --with-debug-prefix-map=\$(CURDIR)= --enable-compressed-debug-sections=none
 
 EOF
     for arg in "$@"; do

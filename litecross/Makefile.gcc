@@ -174,8 +174,11 @@ COMMON_CONFIG := --disable-werror \
 	--enable-lto \
 	--enable-tls \
 	--enable-deterministic-archives \
+	--with-debug-prefix-map=$(CURDIR)= \
+	--enable-compressed-debug-sections=none \
 	$(COMMON_CONFIG)
 
+# TODO: --enable-default-pie
 GCC_CONFIG := --enable-languages=c,c++ \
 	--disable-libmudflap --disable-libsanitizer \
 	--disable-gnu-indirect-function \
@@ -183,17 +186,13 @@ GCC_CONFIG := --enable-languages=c,c++ \
 	--enable-libstdcxx-time=rt --enable-libstdcxx-time --disable-libstdcxx-pch \
 	--disable-libquadmath --disable-libquadmath-support \
 	--enable-libstdcxx-filesystem-ts=yes \
-	--enable-default-pie --enable-static-pie \
+	--enable-static-pie \
 	--disable-decimal-float \
 	$(GCC_CONFIG)
 
 # https://github.com/richfelker/musl-cross-make/issues/181
 BINUTILS_CONFIG := --disable-gprofng \
 	$(BINUTILS_CONFIG)
-
-ifneq ($(SIMPLER_BUILD),)
-COMMON_CONFIG += --disable-lto
-endif
 
 # when prefix is empty, msys will set prefix to /usr in config.site
 export MSYSTEM_PREFIX=
@@ -394,10 +393,15 @@ obj_sysroot/lib64: | obj_sysroot/lib
 	ln -sf lib $@
 
 ifneq ($(HOST),)
-obj_gcc/.lc_configured: export CC:=$(HOST)-gcc$(EXE_EXT) $(STAT)
-obj_gcc/.lc_configured: export CXX:=$(HOST)-g++$(EXE_EXT) $(STAT)
-obj_binutils/.lc_configured: export CC:=$(HOST)-gcc$(EXE_EXT) $(STAT)
-obj_binutils/.lc_configured: export CXX:=$(HOST)-g++$(EXE_EXT) $(STAT)
+# native build
+obj_gcc/.lc_configured: export CC_FOR_TARGET:=$(TARGET)-gcc$(EXE_EXT) $(STAT)
+obj_gcc/.lc_configured: export CXX_FOR_TARGET:=$(TARGET)-g++$(EXE_EXT) $(STAT)
+obj_gcc/.lc_configured: export CC_FOR_BUILD:=$(CC) $(STAT)
+obj_gcc/.lc_configured: export CXX_FOR_BUILD:=$(CXX) $(STAT)
+obj_binutils/.lc_configured: export CC_FOR_TARGET:=$(TARGET)-gcc$(EXE_EXT) $(STAT)
+obj_binutils/.lc_configured: export CXX_FOR_TARGET:=$(TARGET)-g++$(EXE_EXT) $(STAT)
+obj_binutils/.lc_configured: export CC_FOR_BUILD:=$(CC) $(STAT)
+obj_binutils/.lc_configured: export CXX_FOR_BUILD:=$(CXX) $(STAT)
 else
 obj_gcc/.lc_configured: export CC:=$(CC) $(STAT)
 obj_gcc/.lc_configured: export CXX:=$(CXX) $(STAT)

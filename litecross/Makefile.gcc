@@ -62,7 +62,7 @@ ifneq ($(findstring musl,$(TARGET)),)
 MINGW_SRCDIR := 
 
 GCC_CONFIG_FOR_TARGET += --enable-initfini-array \
-	disable-symvers
+	--disable-symvers
 
 ifneq ($(findstring fdpic,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --enable-fdpic
@@ -176,7 +176,10 @@ COMMON_CONFIG := --disable-werror \
 	--enable-deterministic-archives \
 	--with-debug-prefix-map=$(CURDIR)= \
 	--enable-compressed-debug-sections=none \
-	$(COMMON_CONFIG)
+	$(COMMON_CONFIG) \
+	--target=$(TARGET) --prefix= \
+	--with-sysroot=$(SYSROOT) \
+	--libdir=/lib
 
 # TODO: --enable-default-pie
 GCC_CONFIG := --enable-languages=c,c++ \
@@ -199,13 +202,10 @@ export MSYSTEM_PREFIX=
 export MSYS=winsymlinks:nativestrict
 
 FULL_BINUTILS_CONFIG = $(COMMON_CONFIG) $(BINUTILS_CONFIG) \
-	--target=$(TARGET) --prefix= \
-	--with-sysroot=$(SYSROOT) \
+	--disable-separate-code \
 	$(BINTUILS_OVERRIDE)
 
 FULL_GCC_CONFIG = $(COMMON_CONFIG) $(GCC_CONFIG) $(GCC_CONFIG_FOR_TARGET) \
-	--target=$(TARGET) --prefix= \
-	--with-sysroot=$(SYSROOT) --with-build-sysroot=$(CURDIR)/obj_sysroot \
 	$(GCC_OVERRIDE)
 
 FULL_MUSL_CONFIG = $(MUSL_CONFIG) \
@@ -236,7 +236,7 @@ ifeq ($(HOST),)
 SYSROOT = /$(TARGET)
 
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(BUILD)
-FULL_GCC_CONFIG += --build=$(BUILD) --host=$(BUILD)
+FULL_GCC_CONFIG += --build=$(BUILD) --host=$(BUILD) --with-build-sysroot=$(CURDIR)/obj_sysroot 
 GCC_MAKE_ARGS += AR_FOR_TARGET=$(XAR) \
 	AS_FOR_TARGET=$(XAS) \
 	LD_FOR_TARGET=$(XLD) \
@@ -285,7 +285,7 @@ obj_gcc/.lc_configured: obj_binutils/.lc_built
 
 else
 # build native
-SYSROOT = 
+SYSROOT = /
 
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(HOST)
 FULL_GCC_CONFIG += --build=$(BUILD) --host=$(HOST)

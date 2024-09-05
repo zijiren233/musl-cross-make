@@ -1,0 +1,22 @@
+diff --git a/arch/loongarch64/bits/user.h b/arch/loongarch64/bits/user.h
+index fd9b7b22..10e1be45 100644
+--- a/arch/loongarch64/bits/user.h
++++ b/arch/loongarch64/bits/user.h
+@@ -22,3 +22,15 @@ typedef union {
+ 	float f;
+ } elf_fpreg_t;
+ typedef elf_fpreg_t elf_fpregset_t[ELF_NFPREG];
++
++typedef union
++{
++	double d[2];
++	float f[4];
++} elf_lsxregset_t[32] __attribute__((__aligned__(16)));
++
++typedef union
++{
++	double d[4];
++	float f[8];
++} elf_lasxregset_t[32] __attribute__((__aligned__(32)));
+-- 
+2.27.0

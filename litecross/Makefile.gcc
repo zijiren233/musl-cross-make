@@ -124,7 +124,7 @@ GCC_CONFIG_FOR_TARGET += --with-arch=rv64gc --with-abi=lp64d
 endif
 
 ifneq ($(filter loongarch64%,$(TARGET)),)
-GCC_CONFIG_FOR_TARGET += --with-arch=loongarch64 --with-abi=lp64d
+GCC_CONFIG_FOR_TARGET += --with-arch=loongarch64 --with-abi=lp64d --with-tls=trad
 endif
 
 ifneq ($(filter %n32,$(TARGET)),)

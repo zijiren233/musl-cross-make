@@ -189,7 +189,7 @@ GCC_CONFIG := --enable-languages=c,c++ \
 	--enable-libstdcxx-time=yes --disable-libstdcxx-pch \
 	--disable-libquadmath --disable-libquadmath-support \
 	--enable-libstdcxx-filesystem-ts=yes \
-	--enable-default-pie --enable-static-pie \
+	--enable-default-pie --enable-static-pie --enable-host-pie \
 	--disable-decimal-float \
 	--disable-cet \
 	$(GCC_CONFIG)
@@ -207,6 +207,7 @@ FULL_BINUTILS_CONFIG = $(COMMON_CONFIG) $(BINUTILS_CONFIG) \
 	$(BINTUILS_OVERRIDE)
 
 FULL_GCC_CONFIG = $(COMMON_CONFIG) $(GCC_CONFIG) $(GCC_CONFIG_FOR_TARGET) \
+	--with-build-sysroot=$(CURDIR)/obj_sysroot \
 	$(GCC_OVERRIDE)
 
 FULL_MUSL_CONFIG = $(MUSL_CONFIG) \
@@ -237,7 +238,7 @@ ifeq ($(HOST),)
 SYSROOT = /$(TARGET)
 
 FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(BUILD)
-FULL_GCC_CONFIG += --build=$(BUILD) --host=$(BUILD) --with-build-sysroot=$(CURDIR)/obj_sysroot 
+FULL_GCC_CONFIG += --build=$(BUILD) --host=$(BUILD)
 GCC_MAKE_ARGS += AR_FOR_TARGET=$(XAR) \
 	AS_FOR_TARGET=$(XAS) \
 	LD_FOR_TARGET=$(XLD) \

@@ -69,44 +69,67 @@ ifneq ($(findstring fdpic,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --enable-fdpic
 endif
 
+# x86 configurations
+ifneq ($(findstring x86_64,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-arch=x86-64 --with-tune=generic
+endif
+
 ifneq ($(filter i486%,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-arch=i486 --with-tune=generic --enable-cld
 endif
+
 ifneq ($(filter i586%,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-arch=pentium-m --with-fpmath=sse --with-tune=generic --enable-cld
 endif
+
 ifneq ($(filter i686%,$(TARGET)),)
-GCC_CONFIG_FOR_TARGET += --with-arch=i686 --with-tune=generic --enable-cld
+GCC_CONFIG_FOR_TARGET += --with-arch=i686 --with-fpmath=sse --with-tune=generic --enable-cld
 endif
 
+# ARM configurations
 ifneq ($(filter aarch64%,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-arch=armv8-a --with-abi=lp64
 endif
+
+ifneq ($(filter arm-%eabi,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-arch=armv5te --with-tune=arm926ej-s --with-float=soft --with-abi=aapcs-linux
+endif
+
+ifneq ($(filter arm-%eabihf,$(TARGET)),)
+GCC_CONFIG_FOR_TARGET += --with-arch=armv6kz --with-tune=arm1176jzf-s --with-fpu=vfpv2 --with-abi=aapcs-linux
+endif
+
 ifneq ($(filter armv5%eabi,$(TARGET)),)
-GCC_CONFIG_FOR_TARGET += --with-arch=armv5te --with-tune=arm926ej-s --with-abi=aapcs-linux
-else
+GCC_CONFIG_FOR_TARGET += --with-arch=armv5te --with-tune=arm926ej-s --with-float=soft --with-abi=aapcs-linux
+endif
+
 ifneq ($(filter armv6%eabi,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-arch=armv6kz --with-tune=arm1176jzf-s --with-abi=aapcs-linux
 ifneq ($(filter %hf,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-fpu=vfpv2
-endif
 else
+GCC_CONFIG_FOR_TARGET += --with-float=soft
+endif
+endif
+
 ifneq ($(filter armv7%eabi,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-arch=armv7-a --with-tune=generic-armv7-a --with-abi=aapcs-linux --with-mode=thumb
 ifneq ($(filter %hf,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-fpu=vfpv3-d16
-endif
-endif
+else
+GCC_CONFIG_FOR_TARGET += --with-float=soft
 endif
 endif
 
+# PowerPC configurations
 ifneq ($(filter powerpc%,$(TARGET)),)
-GCC_CONFIG_FOR_TARGET += --enable-secureplt
+GCC_CONFIG_FOR_TARGET += --enable-secureplt --enable-decimal-float=no
 ifneq ($(findstring 64,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-abi=elfv2 --enable-targets=powerpcle-linux --with-cpu=970
 endif
 endif
 
+# MIPS configurations
 ifneq ($(filter mips%,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-linker-hash-style=sysv --with-mips-plt
 ifneq ($(findstring 64,$(TARGET)),)
@@ -116,31 +139,37 @@ GCC_CONFIG_FOR_TARGET += --with-arch=mips32 --with-abi=32
 endif
 endif
 
+# S390x configurations
 ifneq ($(filter s390x%,$(TARGET)),)
-GCC_CONFIG_FOR_TARGET += --with-arch=z196 --with-tune=zEC12 --with-zarch --with-long-double-128
+GCC_CONFIG_FOR_TARGET += --with-arch=z196 --with-tune=zEC12 --with-zarch --with-long-double-128 --enable-decimal-float
 endif
 
+# RISC-V configurations
 ifneq ($(filter riscv64%,$(TARGET)),)
-GCC_CONFIG_FOR_TARGET += --with-arch=rv64gc --with-abi=lp64d
+GCC_CONFIG_FOR_TARGET += --with-arch=rv64gc --with-abi=lp64d --enable-autolink-libatomic
 endif
 
+# LoongArch configurations
 ifneq ($(filter loongarch64%,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-arch=loongarch64 --with-abi=lp64d --with-tls=trad
 endif
 
+# ABI configurations
 ifneq ($(filter %n32,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-abi=n32
-else
+endif
+
 ifneq ($(filter %x32,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-abi=x32
 endif
-endif
+
+# Floating-point configurations
 ifneq ($(filter %sf,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-float=soft
-else
+endif
+
 ifneq ($(filter %hf,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-float=hard
-endif
 endif
 
 else

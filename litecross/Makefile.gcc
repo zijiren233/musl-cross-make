@@ -204,7 +204,7 @@ export MSYS=winsymlinks:nativestrict
 
 FULL_BINUTILS_CONFIG = $(COMMON_CONFIG) $(BINUTILS_CONFIG) \
 	--disable-separate-code \
-	$(BINTUILS_OVERRIDE)
+	$(BINUTILS_OVERRIDE)
 
 FULL_GCC_CONFIG = $(COMMON_CONFIG) $(GCC_CONFIG) $(GCC_CONFIG_FOR_TARGET) \
 	--with-build-sysroot=$(CURDIR)/obj_sysroot \

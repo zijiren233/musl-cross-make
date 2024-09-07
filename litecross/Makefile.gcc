@@ -196,6 +196,12 @@ MAKE += INFO_DEPS= infodir=
 MAKE += ac_cv_prog_lex_root=lex.yy
 MAKE += MAKEINFO=false
 
+ifeq ($(BUILD),)
+GUESS = $(shell cd $(GCC_SRCDIR) && ./config.guess)
+TARGET_CANON = $(shell cd $(GCC_SRCDIR) && ./config.sub $(TARGET))
+BUILD = $(GUESS)$(if $(subst $(TARGET_CANON),,$(GUESS)),,xx)
+endif
+
 COMMON_CONFIG := --disable-werror \
 	--disable-multilib \
 	--disable-bootstrap \
@@ -207,9 +213,10 @@ COMMON_CONFIG := --disable-werror \
 	--with-debug-prefix-map=$(CURDIR)= \
 	--enable-compressed-debug-sections=none \
 	$(COMMON_CONFIG) \
-	--target=$(TARGET) --prefix= \
+	--prefix= \
 	--with-sysroot=$(SYSROOT) \
-	--libdir=/lib
+	--libdir=/lib \
+	--build=$(BUILD) --target=$(TARGET)
 
 GCC_CONFIG := --enable-languages=c,c++ \
 	--disable-libmudflap --disable-libsanitizer \
@@ -252,22 +259,12 @@ FULL_MINGW_CRT_CONFIG = $(MINGW_CONFIG) $(MINGW_CRT_CONFIG) \
 FULL_MINGW_PTHREADS_CONFIG = $(MINGW_CONFIG) \
 	--prefix= --host=$(TARGET) --with-sysroot=$(SYSROOT)
 
-ifneq ($(NATIVE),)
-HOST:=$(TARGET)
-endif
-
-ifeq ($(BUILD),)
-GUESS = $(shell cd $(GCC_SRCDIR) && ./config.guess)
-TARGET_CANON = $(shell cd $(GCC_SRCDIR) && ./config.sub $(TARGET))
-BUILD = $(GUESS)$(if $(subst $(TARGET_CANON),,$(GUESS)),,xx)
-endif
-
 ifeq ($(HOST),)
 # build cross
 SYSROOT = /$(TARGET)
 
-FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(BUILD)
-FULL_GCC_CONFIG += --build=$(BUILD) --host=$(BUILD)
+FULL_BINUTILS_CONFIG += --host=$(BUILD)
+FULL_GCC_CONFIG += --host=$(BUILD)
 GCC_MAKE_ARGS += AR_FOR_TARGET=$(XAR) \
 	AS_FOR_TARGET=$(XAS) \
 	LD_FOR_TARGET=$(XLD) \
@@ -318,8 +315,8 @@ else
 # build native
 SYSROOT = /
 
-FULL_BINUTILS_CONFIG += --build=$(BUILD) --host=$(HOST)
-FULL_GCC_CONFIG += --build=$(BUILD) --host=$(HOST)
+FULL_BINUTILS_CONFIG += --host=$(HOST)
+FULL_GCC_CONFIG += --host=$(HOST)
 
 # prevent parallelization of obj_musl/.lc_built and obj_sysroot/.lc_headers
 obj_musl/.lc_built: | obj_sysroot/.lc_headers

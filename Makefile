@@ -25,13 +25,13 @@ SHA1_CMD = sha1sum -c
 
 COWPATCH = $(CURDIR)/cowpatch.sh
 
+-include config.mak
+
 HOST = $(if $(NATIVE),$(TARGET))
 BUILD_DIR = build-$(COMPILER)/$(if $(HOST),$(HOST),local)/$(TARGET)
 OUTPUT = $(CURDIR)/output-$(COMPILER)$(if $(HOST),-$(HOST))
 
 REL_TOP = ../..$(if $(TARGET),/..)
-
--include config.mak
 
 ifneq ($(findstring mingw,$(TARGET)$(HOST)),)
 # mingw

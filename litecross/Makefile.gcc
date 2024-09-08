@@ -31,6 +31,8 @@ else
 STAT = -static --static
 endif
 
+-include config.mak
+
 XGCC_DIR = $(CURDIR)/obj_gcc/gcc
 XGCC = $(XGCC_DIR)/xgcc$(EXE_EXT) -B $(XGCC_DIR) -B $(CURDIR)/obj_sysroot/$(TARGET)/lib
 XCPP = $(XGCC_DIR)/cpp$(EXE_EXT) -B $(XGCC_DIR)
@@ -48,8 +50,6 @@ XSTRIP = $(XBINUTILS_DIR)/strip-new$(EXE_EXT)
 XRC = $(XBINUTILS_DIR)/windres$(EXE_EXT) --preprocessor=$(XGCC_DIR)/xgcc$(EXE_EXT) --preprocessor-arg=-B --preprocessor-arg=$(XGCC_DIR) --preprocessor-arg=-I$(CURDIR)/obj_sysroot/$(TARGET)/include --preprocessor-arg=-E --preprocessor-arg=-xc-header --preprocessor-arg=-DRC_INVOKED -c 1252
 DLLTOOL = $(XBINUTILS_DIR)/dlltool$(EXE_EXT)
 LIBTOOL = $(XBINUTILS_DIR)/libtool$(EXE_EXT)
-
--include config.mak
 
 CFLAGS := $(strip $(COMMON_FLAGS) $(CFLAGS))
 CXXFLAGS := $(strip $(COMMON_FLAGS) $(CXXFLAGS))
@@ -202,6 +202,14 @@ TARGET_CANON = $(shell cd $(GCC_SRCDIR) && ./config.sub $(TARGET))
 BUILD = $(GUESS)$(if $(subst $(TARGET_CANON),,$(GUESS)),,xx)
 endif
 
+ifeq ($(HOST),)
+# build cross
+SYSROOT = /$(TARGET)
+else
+# build native
+SYSROOT = /
+endif
+
 COMMON_CONFIG := --disable-werror \
 	--disable-multilib \
 	--disable-bootstrap \
@@ -261,8 +269,6 @@ FULL_MINGW_PTHREADS_CONFIG = $(MINGW_CONFIG) \
 
 ifeq ($(HOST),)
 # build cross
-SYSROOT = /$(TARGET)
-
 FULL_BINUTILS_CONFIG += --host=$(BUILD)
 FULL_GCC_CONFIG += --host=$(BUILD)
 GCC_MAKE_ARGS += AR_FOR_TARGET=$(XAR) \
@@ -313,8 +319,6 @@ obj_gcc/.lc_configured: obj_binutils/.lc_built
 
 else
 # build native
-SYSROOT = /
-
 FULL_BINUTILS_CONFIG += --host=$(HOST)
 FULL_GCC_CONFIG += --host=$(HOST)
 

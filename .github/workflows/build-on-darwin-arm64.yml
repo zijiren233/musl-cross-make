@@ -73,8 +73,8 @@ jobs:
             -c "gcc-14" -x "g++-14" \
             -T "${{ matrix.targets }}"
 
-      - name: Upload ${{ matrix.targets }} cross
+      - name: Upload dist
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.targets }}-cross
-          path: dist/${{ matrix.targets }}-cross
+          name: dist
+          path: dist

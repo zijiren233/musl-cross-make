@@ -91,14 +91,8 @@ jobs:
                 -n \
                 -T "${{ matrix.targets }}"
 
-      - name: Upload ${{ matrix.targets }} cross
+      - name: Upload dist
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.targets }}-cross
-          path: dist/${{ matrix.targets }}-cross
-
-      - name: Upload ${{ matrix.targets }} native
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.targets }}-native
-          path: dist/${{ matrix.targets }}-native
+          name: dist
+          path: dist

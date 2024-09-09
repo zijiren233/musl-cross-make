@@ -334,8 +334,8 @@ int main()
 function Build() {
     TARGET="$1"
     DIST_NAME="${DIST}/${DIST_NAME_PREFIX}${TARGET}"
-    CROSS_DIST_NAME="${DIST_NAME}-cross${DIST_NAME_SUFFIX}"
-    NATIVE_DIST_NAME="${DIST_NAME}-native${DIST_NAME_SUFFIX}"
+    CROSS_DIST_NAME="${DIST_NAME}-cross${CROSS_DIST_NAME_SUFFIX}"
+    NATIVE_DIST_NAME="${DIST_NAME}-native${NATIVE_DIST_NAME_SUFFIX}"
     CROSS_LOG_FILE="${CROSS_DIST_NAME}.log"
     NATIVE_LOG_FILE="${NATIVE_DIST_NAME}.log"
 
@@ -428,6 +428,12 @@ function Build() {
         if [ "$ENABLE_ARCHIVE" ]; then
             tar -zcf "${NATIVE_DIST_NAME}.tgz" -C "${NATIVE_DIST_NAME}" .
             echo "package ${NATIVE_DIST_NAME} to ${NATIVE_DIST_NAME}.tgz success"
+            if [[ $TARGET =~ mingw ]]; then
+                find "${NATIVE_DIST_NAME}" -type l -delete
+                (cd ${NATIVE_DIST_NAME} && [ -d ${TARGET}/include ] || cp -R include ${TARGET})
+                zip -rq "${NATIVE_DIST_NAME}.zip" "${NATIVE_DIST_NAME}"
+                echo "package ${NATIVE_DIST_NAME} to ${NATIVE_DIST_NAME}.zip success"
+            fi
         fi
     fi
 }

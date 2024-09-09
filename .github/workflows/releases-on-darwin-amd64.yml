@@ -74,17 +74,11 @@ jobs:
       - name: Build
         id: build
         run: |
+          export CROSS_DIST_NAME_SUFFIX="-${{ env.UNAMESPACER }}"
           bash scripts/build.sh \
             -LDP \
             -c "gcc-14" -x "g++-14" \
             -T "${{ matrix.targets }}"
-
-      - name: Archive
-        run: |
-          mkdir -p archive
-          tar -zcvf archive/${{ matrix.targets }}-cross-${{ env.UNAMESPACER }}.tgz \
-            -C dist/${{ matrix.targets }}-cross \
-            .
 
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -94,4 +88,5 @@ jobs:
           append_body: false
           fail_on_unmatched_files: true
           files: |
-            archive/*.tgz
+            dist/*.tgz
+            dist/*.zip

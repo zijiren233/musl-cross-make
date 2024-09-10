@@ -78,6 +78,7 @@ jobs:
           bash scripts/build.sh \
             -LDP \
             -c "gcc-14" -x "g++-14" \
+            -a \
             -T "${{ matrix.targets }}"
 
       - name: Release

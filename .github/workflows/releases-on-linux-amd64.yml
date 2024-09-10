@@ -92,6 +92,7 @@ jobs:
             sh scripts/build.sh \
                 -LDP \
                 -n \
+                -a \
                 -T "${{ matrix.targets }}"
 
       - name: Release

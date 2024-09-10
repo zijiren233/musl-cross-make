@@ -96,12 +96,11 @@ jobs:
                 -T "${{ matrix.targets }}"
 
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           draft: false
           prerelease: false
           append_body: false
           fail_on_unmatched_files: true
           files: |
-            dist/*.tgz
-            dist/*.zip
+            dist/*.*

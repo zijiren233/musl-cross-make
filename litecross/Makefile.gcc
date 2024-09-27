@@ -151,7 +151,7 @@ endif
 
 # LoongArch configurations
 ifneq ($(filter loongarch64%,$(TARGET)),)
-GCC_CONFIG_FOR_TARGET += --with-arch=loongarch64 --with-abi=lp64d --with-tls=trad
+GCC_CONFIG_FOR_TARGET += --with-arch=loongarch64 --with-abi=lp64d
 endif
 
 # ABI configurations

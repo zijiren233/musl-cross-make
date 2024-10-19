@@ -95,7 +95,7 @@ function Init() {
         DEFAULT_MPC_VER="1.3.1"
         DEFAULT_MPFR_VER="4.2.1"
         DEFAULT_ISL_VER="0.26"
-        DEFAULT_LINUX_VER="6.6.48"
+        DEFAULT_LINUX_VER="6.6.57"
         DEFAULT_MINGW_VER="v12.0.0"
         if [ ! "$CONFIG_SUB_REV" ]; then
             CONFIG_SUB_REV="$DEFAULT_CONFIG_SUB_REV"
@@ -306,7 +306,6 @@ int main()
         return
     fi
 }
-
 
 function TestCrossCXX() {
     COMPILER="$@"

@@ -74,8 +74,11 @@ function Init() {
             sleep 3
         fi
 
-        if [ -z "$(patch -v | grep "GNU patch")" ]; then
-            echo "Warn: patch not gnu version"
+        if [ -x "$(command -v gpatch)" ]; then
+            PATCH_PATH="$(command -v gpatch)"
+            ln -s "$PATCH_PATH" "$TMP_BIN_DIR/patch"
+        else
+            echo "Warn: gpatch not found"
             echo "Warn: when patch is not gnu version, it may cause build error"
             echo "Warn: you can install gpatch with brew"
             echo "Warn: brew install gpatch"

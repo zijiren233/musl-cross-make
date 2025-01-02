@@ -1,5 +1,8 @@
 aarch64-linux-musl
+arm-linux-musleabi
+arm-linux-musleabihf
 armv5-linux-musleabi
+armv5te-linux-musleabi
 armv6-linux-musleabi
 armv6-linux-musleabihf
 armv7-linux-musleabi
@@ -16,6 +19,7 @@ mips64el-linux-muslsf
 powerpc64-linux-musl
 powerpc64le-linux-musl
 riscv64-linux-musl
+riscv64gc-linux-musl
 s390x-linux-musl
 i586-linux-musl
 i686-linux-musl

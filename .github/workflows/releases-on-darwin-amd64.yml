@@ -43,7 +43,7 @@ jobs:
 
   releases_targets_on_macos_amd64:
     name: Build
-    runs-on: macos-latest
+    runs-on: macos-13
     needs:
       - init
     strategy:

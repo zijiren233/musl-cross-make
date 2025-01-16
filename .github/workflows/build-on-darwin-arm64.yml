@@ -38,7 +38,7 @@ jobs:
 
   build_targets_on_macos_arm64:
     name: Build
-    runs-on: macos-14
+    runs-on: macos-15
     needs:
       - init
     strategy:

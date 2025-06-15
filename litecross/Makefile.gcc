@@ -63,7 +63,8 @@ ifneq ($(findstring musl,$(TARGET)),)
 MINGW_SRCDIR := 
 
 GCC_CONFIG_FOR_TARGET += --enable-initfini-array \
-	--disable-symvers
+	--disable-symvers \
+	--enable-tls
 
 ifneq ($(findstring fdpic,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --enable-fdpic
@@ -180,13 +181,13 @@ LINUX_SRCDIR :=
 GCC_CONFIG_FOR_TARGET += --disable-sjlj-exceptions \
 	--disable-dw2-exceptions \
 	--enable-fully-dynamic-string \
-	--enable-threads=posix
+	--enable-threads=posix \
+	--disable-tls
 ifneq ($(findstring x86_64,$(TARGET)),)
 # 64
 MINGW_CRT_CONFIG += --disable-lib32 --enable-lib64
 else
 MINGW_CRT_CONFIG += --enable-lib32 --disable-lib64
-GCC_CONFIG_FOR_TARGET += --disable-tls
 endif
 
 endif
@@ -216,7 +217,6 @@ COMMON_CONFIG := --disable-werror \
 	--disable-nls \
 	--with-zstd=no \
 	--enable-lto \
-	--enable-tls \
 	--enable-deterministic-archives \
 	--with-debug-prefix-map=$(CURDIR)= \
 	--enable-compressed-debug-sections=none \

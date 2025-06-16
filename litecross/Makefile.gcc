@@ -181,8 +181,14 @@ LINUX_SRCDIR :=
 GCC_CONFIG_FOR_TARGET += --disable-sjlj-exceptions \
 	--disable-dw2-exceptions \
 	--enable-fully-dynamic-string \
-	--enable-threads=posix \
-	--disable-tls
+	--enable-threads=posix
+
+ifneq ($(findstring mingw,$(HOST)),)
+GCC_CONFIG_FOR_TARGET += --disable-tls
+else
+GCC_CONFIG_FOR_TARGET += --enable-tls
+endif
+
 ifneq ($(findstring x86_64,$(TARGET)),)
 # 64
 MINGW_CRT_CONFIG += --disable-lib32 --enable-lib64

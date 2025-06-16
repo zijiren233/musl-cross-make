@@ -99,7 +99,7 @@ function Init() {
         DEFAULT_MPFR_VER="4.2.2"
         DEFAULT_ISL_VER="0.27"
         DEFAULT_LINUX_VER="6.12.33"
-        DEFAULT_MINGW_VER="v12.0.0"
+        DEFAULT_MINGW_VER="v13.0.0"
         if [ ! "$CONFIG_SUB_REV" ]; then
             CONFIG_SUB_REV="$DEFAULT_CONFIG_SUB_REV"
         fi

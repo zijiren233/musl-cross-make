@@ -10,7 +10,7 @@ GCC_CONFIG =
 MINGW_CRT_CONFIG = 
 MINGW_HEADERS_CONFIG = 
 OPTIMIZE_LEVEL = 
-COMMON_FLAGS = -O2 -g0 -pipe -Wno-error -w
+COMMON_FLAGS = -O2 -g0 -pipe -Wno-error -w -Werror=format-security
 # COMMON_FLAGS += -fno-align-functions -fno-align-jumps -fno-align-loops -fno-align-labels
 
 ifeq ($(OS),Windows_NT)
@@ -183,6 +183,7 @@ GCC_CONFIG_FOR_TARGET += --disable-sjlj-exceptions \
 	--enable-fully-dynamic-string \
 	--enable-threads=posix \
 	--disable-tls
+
 ifneq ($(findstring x86_64,$(TARGET)),)
 # 64
 MINGW_CRT_CONFIG += --disable-lib32 --enable-lib64
@@ -217,6 +218,7 @@ COMMON_CONFIG := --disable-werror \
 	--disable-nls \
 	--with-zstd=no \
 	--enable-lto \
+	--enable-libgomp \
 	--enable-deterministic-archives \
 	--with-debug-prefix-map=$(CURDIR)= \
 	--enable-compressed-debug-sections=none \

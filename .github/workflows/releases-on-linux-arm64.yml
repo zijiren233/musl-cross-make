@@ -74,7 +74,8 @@ jobs:
                 bison \
                 rsync \
                 patch \
-                perl && \
+                perl \
+                flex && \
               cd /build && \
               NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/${{ env.USE_NATIVE_VERSION }}/aarch64-linux-musl-native-${{ env.UNAMESPACER }}.tgz" && \
               echo "try install $NATIVE_COMPILER" && \

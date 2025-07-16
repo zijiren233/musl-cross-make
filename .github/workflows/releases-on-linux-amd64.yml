@@ -81,7 +81,8 @@ jobs:
               rsync \
               patch \
               perl \
-              zip
+              zip \
+              flex
           run: |
             cd /build
             NATIVE_COMPILER="https://github.com/${{ github.repository }}/releases/download/${{ env.USE_NATIVE_VERSION }}/x86_64-linux-musl-native-${{ env.UNAMESPACER }}.tgz"

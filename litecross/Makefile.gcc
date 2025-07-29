@@ -73,6 +73,7 @@ endif
 # x86 configurations
 ifneq ($(findstring x86_64,$(TARGET)),)
 GCC_CONFIG_FOR_TARGET += --with-arch=x86-64 --with-tune=generic
+BINUTILS_CONFIG_FOR_TARGET += --enable-targets=x86_64-pep
 endif
 
 ifneq ($(filter i486%,$(TARGET)),)
@@ -258,7 +259,7 @@ BINUTILS_CONFIG := --disable-gprofng \
 export MSYSTEM_PREFIX=
 export MSYS=winsymlinks:nativestrict
 
-FULL_BINUTILS_CONFIG = $(COMMON_CONFIG) $(BINUTILS_CONFIG) \
+FULL_BINUTILS_CONFIG = $(COMMON_CONFIG) $(BINUTILS_CONFIG) $(BINUTILS_CONFIG_FOR_TARGET) \
 	--disable-separate-code \
 	$(BINUTILS_OVERRIDE)
 

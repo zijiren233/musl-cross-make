@@ -242,6 +242,16 @@ GCC_CONFIG := --enable-languages=c,c++ \
 
 # https://github.com/richfelker/musl-cross-make/issues/181
 BINUTILS_CONFIG := --disable-gprofng \
+	--enable-64-bit-bfd \
+	--enable-colored-disassembly \
+	--enable-default-execstack=no \
+	--enable-default-hash-style=gnu \
+	--enable-deterministic-archives \
+	--enable-ld=default \
+	--enable-new-dtags \
+	--enable-relro \
+	--enable-threads \
+	--with-mmap \
 	$(BINUTILS_CONFIG)
 
 # when prefix is empty, msys will set prefix to /usr in config.site

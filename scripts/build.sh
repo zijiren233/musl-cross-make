@@ -90,7 +90,7 @@ function Init() {
     fi
 
     {
-        DEFAULT_CONFIG_SUB_REV="00b159274960"
+        DEFAULT_CONFIG_SUB_REV="a2287c3041a3"
         DEFAULT_GCC_VER="14.3.0"
         DEFAULT_MUSL_VER="1.2.5"
         DEFAULT_BINUTILS_VER="2.45"
